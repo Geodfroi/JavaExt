@@ -1,3 +1,7 @@
 {
-  "TestProperty" : "testStr"
+  "TestProperty" : "testStr",
+  "MapProperty" : {
+    "MapKey" : "MapValue",
+    "MapKey2" : null
+  }
 }

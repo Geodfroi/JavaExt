@@ -40,4 +40,5 @@ class CollectionStTest {
     void testToString_null() {
         System.out.println(CollectionSt.toString(null, "--"));
     }
+
 }
