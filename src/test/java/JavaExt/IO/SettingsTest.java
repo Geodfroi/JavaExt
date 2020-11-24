@@ -52,7 +52,7 @@ class SettingsTest {
     void getStr_existing() {
         Optional<String> result = Settings.getInstance().getStr(StrPropertyName);
         if (result.isPresent()){
-            String str = Settings.getInstance().getStr(StrPropertyName).get();
+            String str = result.get();
             assert (str.equals(TestStringValue) );
         }
         else
