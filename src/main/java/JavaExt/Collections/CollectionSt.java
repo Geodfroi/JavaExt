@@ -12,8 +12,9 @@ public class CollectionSt {
         if (a == null)
             return "";
         int size = a.size();
-        if (size == 0)
+        if (size == 0) {
             return "";
+        }
 
         StringBuilder str = new StringBuilder();
         int count = 0;

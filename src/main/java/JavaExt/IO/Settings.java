@@ -4,12 +4,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * https://mkyong.com/java/jackson-tree-model-example/
@@ -27,16 +27,30 @@ public class Settings {
         return instance;
     }
 
-    public String get(String propertyName) {
+    public Optional<String> getStr(String propertyName) {
         try {
             ObjectNode rootNode = getRootNode();
-            if (Objects.requireNonNull(rootNode).hasNonNull(propertyName))
-                return rootNode.path(propertyName).asText();
+            if (!Objects.requireNonNull(rootNode).hasNonNull(propertyName)) {
+                return Optional.empty();
+            }
+            return Optional.of(rootNode.path(propertyName).asText());
 
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return null;
+        return Optional.empty();
+    }
+
+    public Optional<Integer> getInt(String propertyName) {
+        try {
+            ObjectNode rootNode = getRootNode();
+            if (Objects.requireNonNull(rootNode).hasNonNull(propertyName))
+                return Optional.of(rootNode.path(propertyName).asInt());
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return Optional.empty();
     }
 
     public void set(String propertyName, String value) {
@@ -50,33 +64,15 @@ public class Settings {
         }
     }
 
-    private void write(JsonNode rootNode) throws IOException {
+    public void set(String propertyName, int value) {
+
         try {
-            String str = mapper.
-                    writerWithDefaultPrettyPrinter().
-                    writeValueAsString(rootNode);
-
-            Path path = Path.of(SETTINGS_FILE_NAME);
-            Files.writeString(path, str);
-        } catch (JsonProcessingException e) {
-            throw  new IOException(e.getMessage());
+            ObjectNode rootNode = getRootNode();
+            rootNode.put(propertyName, value);
+            write(rootNode);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-    }
-
-    @NotNull
-    private ObjectNode getRootNode() throws IOException {
-
-        if (!Files.exists(path))
-            Files.createFile(path);
-
-        String str = Files.readString(path);
-
-        JsonNode jsonNode = mapper.readTree(str);
-        if (jsonNode.isMissingNode())
-            jsonNode = mapper.readTree("{}");
-
-        ObjectNode node = (ObjectNode) jsonNode;
-        return Objects.requireNonNull(node);
     }
 
     public void setMapValue(String propertyName, String key, String value) {
@@ -113,4 +109,34 @@ public class Settings {
             return null;
         }
     }
+
+    private void write(JsonNode rootNode) throws IOException {
+        try {
+            String str = mapper.
+                    writerWithDefaultPrettyPrinter().
+                    writeValueAsString(rootNode);
+
+            Path path = Path.of(SETTINGS_FILE_NAME);
+            Files.writeString(path, str);
+        } catch (JsonProcessingException e) {
+            throw  new IOException(e.getMessage());
+        }
+    }
+
+    private ObjectNode getRootNode() throws IOException {
+
+        if (!Files.exists(path))
+            Files.createFile(path);
+
+        String str = Files.readString(path);
+
+        JsonNode jsonNode = mapper.readTree(str);
+        if (jsonNode.isMissingNode())
+            jsonNode = mapper.readTree("{}");
+
+        ObjectNode node = (ObjectNode) jsonNode;
+        return Objects.requireNonNull(node);
+    }
+
+
 }

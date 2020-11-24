@@ -1,6 +1,4 @@
-package JavaExt.Tests;
-
-import JavaExt.Collections.CollectionSt;
+package JavaExt.Collections;
 
 import java.util.ArrayList;
 import java.util.List;

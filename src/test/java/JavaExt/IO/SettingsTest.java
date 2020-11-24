@@ -1,16 +1,19 @@
 package JavaExt.IO;
 
-import JavaExt.IO.Settings;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 
 class SettingsTest {
 
     public static final String InvalidPropertyName = "NotFoundProperty";
-    public static final String TestPropertyName = "TestProperty";
+    public static final String StrPropertyName = "StrProperty";
+    public static final String IntPropertyName = "IntProperty";
+    public static final String MapPropertyName = "MapProperty";
+
     public static final String TestStringValue = "testStr";
+    public static final int IntValue = 43;
 
     private static final String TestMapPropertyName = "MapProperty";
     private static final String TestMapKey = "MapKey";
@@ -20,20 +23,54 @@ class SettingsTest {
 
 
     @org.junit.jupiter.api.Test
-    void get_existing() {
-        String result = Settings.getInstance().get(TestPropertyName);
-        assert (result.equals("testStr") );
+    void setStr() {
+        Settings.getInstance().set(StrPropertyName, TestStringValue);
     }
 
     @org.junit.jupiter.api.Test
-    void get_invalid() {
-        String result = Settings.getInstance().get(InvalidPropertyName);
-        assert (result == null);
+    void setInt() {
+        Settings.getInstance().set(IntPropertyName, IntValue);
+    }
+
+
+    @org.junit.jupiter.api.Test
+    void SetMapValue(){
+        Settings.getInstance().setMapValue(TestMapPropertyName, TestMapKey,  TestMapValue);
     }
 
     @org.junit.jupiter.api.Test
-    void set() {
-        Settings.getInstance().set(TestPropertyName, TestStringValue);
+    void SetMapValue2(){
+        Settings.getInstance().setMapValue(TestMapPropertyName, TestMapKey2,  TestMapValue2);
+    }
+
+    @org.junit.jupiter.api.Test
+    void SetMapValue_null(){
+        Settings.getInstance().setMapValue(TestMapPropertyName, TestMapKey2,  null);
+    }
+
+    @org.junit.jupiter.api.Test
+    void getStr_existing() {
+        Optional<String> result = Settings.getInstance().getStr(StrPropertyName);
+        if (result.isPresent()){
+            String str = Settings.getInstance().getStr(StrPropertyName).get();
+            assert (str.equals(TestStringValue) );
+        }
+        else
+        {
+            throw new IllegalArgumentException("getStr_existing : not found");
+        }
+    }
+
+    @org.junit.jupiter.api.Test
+    void getStr_invalid() {
+        System.out.println();
+        assert(Settings.getInstance().getStr(InvalidPropertyName).isEmpty());
+    }
+
+    @org.junit.jupiter.api.Test
+    void getInt_existing() {
+        int result = Settings.getInstance().getInt(IntPropertyName).get();
+        assert (result == IntValue);
     }
 
     @org.junit.jupiter.api.Test
@@ -44,27 +81,14 @@ class SettingsTest {
 
     @org.junit.jupiter.api.Test
     void getMapValue_invalidKey(){
-        String value = Settings.getInstance().getMapValue(TestPropertyName, "notValidKey");
+        String value = Settings.getInstance().getMapValue(MapPropertyName, "notValidKey");
         assert (value == null);
     }
 
     @org.junit.jupiter.api.Test
     void getMapValue_nullKey(){
-        String value = Settings.getInstance().getMapValue(TestPropertyName, null);
+        String value = Settings.getInstance().getMapValue(MapPropertyName, null);
         assert (value == null);
-    }
-
-    @org.junit.jupiter.api.Test
-    void SetMapValue(){
-        Settings.getInstance().setMapValue(TestMapPropertyName, TestMapKey,  TestMapValue);
-    }
-    @org.junit.jupiter.api.Test
-    void SetMapValue2(){
-        Settings.getInstance().setMapValue(TestMapPropertyName, TestMapKey2,  TestMapValue2);
-    }
-    @org.junit.jupiter.api.Test
-    void SetMapValue_null(){
-        Settings.getInstance().setMapValue(TestMapPropertyName, TestMapKey2,  null);
     }
 
     @org.junit.jupiter.api.AfterAll
