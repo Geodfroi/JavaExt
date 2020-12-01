@@ -1,4 +1,4 @@
-package JavaExt.IO;
+package ch.azure.aurore.IO;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -35,13 +35,11 @@ public class SimpleJSON {
         return Objects.requireNonNull(node);
     }
 
-    public Optional<String> getStr(String propertyName) {
+    public Optional<Boolean> getBoolean(String valueName) {
         try {
             ObjectNode rootNode = getRootNode();
-            if (!Objects.requireNonNull(rootNode).hasNonNull(propertyName)) {
-                return Optional.empty();
-            }
-            return Optional.of(rootNode.path(propertyName).asText());
+            if (Objects.requireNonNull(rootNode).hasNonNull(valueName))
+                return Optional.of(rootNode.path(valueName).asBoolean());
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -49,11 +47,11 @@ public class SimpleJSON {
         return Optional.empty();
     }
 
-    public Optional<Integer> getInt(String propertyName) {
+    public Optional<Integer> getInt(String valueName) {
         try {
             ObjectNode rootNode = getRootNode();
-            if (Objects.requireNonNull(rootNode).hasNonNull(propertyName))
-                return Optional.of(rootNode.path(propertyName).asInt());
+            if (Objects.requireNonNull(rootNode).hasNonNull(valueName))
+                return Optional.of(rootNode.path(valueName).asInt());
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -61,35 +59,56 @@ public class SimpleJSON {
         return Optional.empty();
     }
 
-    public void set(String propertyName, String value) {
+    public Optional<String> getStr(String valueName) {
+        try {
+            ObjectNode rootNode = getRootNode();
+            if (Objects.requireNonNull(rootNode).hasNonNull(valueName))
+                return Optional.of(rootNode.path(valueName).asText());
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return Optional.empty();
+    }
+
+    public void set(String valueName, String value) {
 
         try {
             ObjectNode rootNode = getRootNode();
-            rootNode.put(propertyName, value);
+            rootNode.put(valueName, value);
             write(rootNode);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public void set(String propertyName, int value) {
-
+    public void set(String valueName, int value) {
         try {
             ObjectNode rootNode = getRootNode();
-            rootNode.put(propertyName, value);
+            rootNode.put(valueName, value);
             write(rootNode);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public void setMapValue(String propertyName, String key, String value) {
+    public void set(String valueName, Boolean value){
         try {
             ObjectNode rootNode = getRootNode();
-            JsonNode mapNode = rootNode.get(propertyName);
+            rootNode.put(valueName, value);
+            write(rootNode);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void setMapValue(String valueName, String key, String value) {
+        try {
+            ObjectNode rootNode = getRootNode();
+            JsonNode mapNode = rootNode.get(valueName);
             if (mapNode == null) {
                 mapNode = mapper.createObjectNode();
-                rootNode.set(propertyName, mapNode);
+                rootNode.set(valueName, mapNode);
             }
             ((ObjectNode) mapNode).put(key, value);
 
@@ -99,11 +118,11 @@ public class SimpleJSON {
         }
     }
 
-    public String getMapValue(String propertyName, String key) {
+    public String getMapValue(String valueName, String key) {
 
         try {
             JsonNode rootNode = getRootNode();
-            JsonNode mapNode = rootNode.get(propertyName);
+            JsonNode mapNode = rootNode.get(valueName);
             if (mapNode == null) {
                 return null;
             }
@@ -129,4 +148,6 @@ public class SimpleJSON {
             throw  new IOException(e.getMessage());
         }
     }
+
+
 }

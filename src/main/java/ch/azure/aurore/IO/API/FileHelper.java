@@ -1,4 +1,4 @@
-package JavaExt.IO.API;
+package ch.azure.aurore.IO.API;
 
 import java.io.File;
 import java.io.IOException;

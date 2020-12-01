@@ -1,6 +1,6 @@
-package JavaExt.IO.API;
+package ch.azure.aurore.IO.API;
 
-import JavaExt.IO.SimpleJSON;
+import ch.azure.aurore.IO.SimpleJSON;
 
 import java.util.Optional;
 

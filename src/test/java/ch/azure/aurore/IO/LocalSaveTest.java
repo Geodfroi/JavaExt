@@ -1,6 +1,6 @@
-package JavaExt.IO;
+package ch.azure.aurore.IO;
 
-import JavaExt.IO.API.LocalSave;
+import ch.azure.aurore.IO.API.LocalSave;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -13,6 +13,7 @@ class LocalSaveTest {
     public static final String StrPropertyName = "StrProperty";
     public static final String IntPropertyName = "IntProperty";
     public static final String MapPropertyName = "MapProperty";
+    public static final String BoolPropertyName = "BoolProperty";
 
     public static final String TestStringValue = "testStr";
     public static final int IntValue = 43;
@@ -33,6 +34,10 @@ class LocalSaveTest {
         LocalSave.set(IntPropertyName, IntValue);
     }
 
+    @org.junit.jupiter.api.Test
+    void setBoolean(){
+        LocalSave.set(BoolPropertyName, true);
+    }
 
     @org.junit.jupiter.api.Test
     void SetMapValue(){
@@ -64,8 +69,13 @@ class LocalSaveTest {
 
     @org.junit.jupiter.api.Test
     void getStr_invalid() {
-        System.out.println();
         assert(LocalSave.getStr(InvalidPropertyName).isEmpty());
+    }
+
+    @org.junit.jupiter.api.Test
+    void getBoolean_existing() {
+        var result = LocalSave.getBoolean(BoolPropertyName).get();
+        assert(result);
     }
 
     @org.junit.jupiter.api.Test

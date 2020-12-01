@@ -1,6 +1,6 @@
-package JavaExt.IO;
+package ch.azure.aurore.IO;
 
-import JavaExt.IO.API.FileHelper;
+import ch.azure.aurore.IO.API.FileHelper;
 import org.junit.jupiter.api.Assertions;
 
 import java.util.Optional;

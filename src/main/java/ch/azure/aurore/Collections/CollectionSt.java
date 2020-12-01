@@ -1,4 +1,4 @@
-package JavaExt.Collections;
+package ch.azure.aurore.Collections;
 import java.util.Collection;
 
 public class CollectionSt {
