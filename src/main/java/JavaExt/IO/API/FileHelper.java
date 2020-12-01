@@ -1,4 +1,4 @@
-package JavaExt.IO;
+package JavaExt.IO.API;
 
 import java.io.File;
 import java.io.IOException;
@@ -10,7 +10,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.awt.Desktop;
 
-public class DataSt {
+public class FileHelper {
 
     public static final String BACKUP_FOLDER_NAME = "Backups";
 
@@ -47,9 +47,9 @@ public class DataSt {
         }
 
         String fileName = path1.getFileName().toString();
-        String rootName = DataSt.getFileNameWithoutExt(fileName);
+        String rootName = FileHelper.getFileNameWithoutExt(fileName);
 
-        Optional<String> extValue = DataSt.getExtension(fileName);
+        Optional<String> extValue = FileHelper.getExtension(fileName);
         if (extValue.isEmpty()) {
             System.out.println("backup failed : Can't get file extension");
             return;

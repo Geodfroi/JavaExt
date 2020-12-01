@@ -1,11 +1,13 @@
 package JavaExt.IO;
 
+import JavaExt.IO.API.LocalSave;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 
-class SettingsTest {
+class LocalSaveTest {
 
     public static final String InvalidPropertyName = "NotFoundProperty";
     public static final String StrPropertyName = "StrProperty";
@@ -21,36 +23,35 @@ class SettingsTest {
     private static final String TestMapKey2 = "MapKey2";
     private static final String TestMapValue2 = "MapValue2";
 
-
     @org.junit.jupiter.api.Test
     void setStr() {
-        Settings.getInstance().set(StrPropertyName, TestStringValue);
+        LocalSave.set(StrPropertyName, TestStringValue);
     }
 
     @org.junit.jupiter.api.Test
     void setInt() {
-        Settings.getInstance().set(IntPropertyName, IntValue);
+        LocalSave.set(IntPropertyName, IntValue);
     }
 
 
     @org.junit.jupiter.api.Test
     void SetMapValue(){
-        Settings.getInstance().setMapValue(TestMapPropertyName, TestMapKey,  TestMapValue);
+        LocalSave.setMapValue(TestMapPropertyName, TestMapKey,  TestMapValue);
     }
 
     @org.junit.jupiter.api.Test
     void SetMapValue2(){
-        Settings.getInstance().setMapValue(TestMapPropertyName, TestMapKey2,  TestMapValue2);
+        LocalSave.setMapValue(TestMapPropertyName, TestMapKey2,  TestMapValue2);
     }
 
     @org.junit.jupiter.api.Test
     void SetMapValue_null(){
-        Settings.getInstance().setMapValue(TestMapPropertyName, TestMapKey2,  null);
+        LocalSave.setMapValue(TestMapPropertyName, TestMapKey2,  null);
     }
 
     @org.junit.jupiter.api.Test
     void getStr_existing() {
-        Optional<String> result = Settings.getInstance().getStr(StrPropertyName);
+        Optional<String> result = LocalSave.getStr(StrPropertyName);
         if (result.isPresent()){
             String str = result.get();
             assert (str.equals(TestStringValue) );
@@ -64,37 +65,37 @@ class SettingsTest {
     @org.junit.jupiter.api.Test
     void getStr_invalid() {
         System.out.println();
-        assert(Settings.getInstance().getStr(InvalidPropertyName).isEmpty());
+        assert(LocalSave.getStr(InvalidPropertyName).isEmpty());
     }
 
     @org.junit.jupiter.api.Test
     void getInt_existing() {
-        int result = Settings.getInstance().getInt(IntPropertyName).get();
+        int result = LocalSave.getInt(IntPropertyName).get();
         assert (result == IntValue);
     }
 
     @org.junit.jupiter.api.Test
     void getMapValue(){
-       String value = Settings.getInstance().getMapValue(TestMapPropertyName, TestMapKey);
+       String value = LocalSave.getMapValue(TestMapPropertyName, TestMapKey);
        assert (value.equals(TestMapValue));
     }
 
     @org.junit.jupiter.api.Test
     void getMapValue_invalidKey(){
-        String value = Settings.getInstance().getMapValue(MapPropertyName, "notValidKey");
+        String value = LocalSave.getMapValue(MapPropertyName, "notValidKey");
         assert (value == null);
     }
 
     @org.junit.jupiter.api.Test
     void getMapValue_nullKey(){
-        String value = Settings.getInstance().getMapValue(MapPropertyName, null);
+        String value = LocalSave.getMapValue(MapPropertyName, null);
         assert (value == null);
     }
 
     @org.junit.jupiter.api.AfterAll
     static void afterAll() throws IOException {
-        Path path = Path.of(Settings.SETTINGS_FILE_NAME);
+        Path path = Path.of(LocalSave.SETTINGS_FILE_NAME);
         String str = Files.readString(path);
-        System.out.println("[settings.json] :\r\n" + str);
+        System.out.println("[local.json] :\r\n" + str);
     }
 }

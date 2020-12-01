@@ -11,20 +11,28 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
 
-/**
- * https://mkyong.com/java/jackson-tree-model-example/
- */
-public class Settings {
-
-    public static final String SETTINGS_FILE_NAME = "settings.json";
-
-    static Settings instance = new Settings();
+public class SimpleJSON {
 
     ObjectMapper mapper = new ObjectMapper();
-    Path path = Path.of(SETTINGS_FILE_NAME);
+    Path path;
 
-    public static Settings getInstance() {
-        return instance;
+    public SimpleJSON(String settingsFileName) {
+        path = Path.of(settingsFileName);
+    }
+
+    private ObjectNode getRootNode() throws IOException {
+
+        if (!Files.exists(path))
+            Files.createFile(path);
+
+        String str = Files.readString(path);
+
+        JsonNode jsonNode = mapper.readTree(str);
+        if (jsonNode.isMissingNode())
+            jsonNode = mapper.readTree("{}");
+
+        ObjectNode node = (ObjectNode) jsonNode;
+        return Objects.requireNonNull(node);
     }
 
     public Optional<String> getStr(String propertyName) {
@@ -116,27 +124,9 @@ public class Settings {
                     writerWithDefaultPrettyPrinter().
                     writeValueAsString(rootNode);
 
-            Path path = Path.of(SETTINGS_FILE_NAME);
             Files.writeString(path, str);
         } catch (JsonProcessingException e) {
             throw  new IOException(e.getMessage());
         }
     }
-
-    private ObjectNode getRootNode() throws IOException {
-
-        if (!Files.exists(path))
-            Files.createFile(path);
-
-        String str = Files.readString(path);
-
-        JsonNode jsonNode = mapper.readTree(str);
-        if (jsonNode.isMissingNode())
-            jsonNode = mapper.readTree("{}");
-
-        ObjectNode node = (ObjectNode) jsonNode;
-        return Objects.requireNonNull(node);
-    }
-
-
 }

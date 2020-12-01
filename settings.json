@@ -1,8 +1,0 @@
-{
-  "MapProperty" : {
-    "MapKey2" : null,
-    "MapKey" : "MapValue"
-  },
-  "IntProperty" : 43,
-  "StrProperty" : "testStr"
-}
