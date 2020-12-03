@@ -5,6 +5,7 @@ import ch.azure.aurore.IO.API.LocalSave;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.Optional;
 
 class LocalSaveTest {
@@ -74,32 +75,39 @@ class LocalSaveTest {
 
     @org.junit.jupiter.api.Test
     void getBoolean_existing() {
-        var result = LocalSave.getBoolean(BoolPropertyName).get();
-        assert(result);
+        Optional<Boolean> result = LocalSave.getBoolean(BoolPropertyName);
+        assert(result.get());
     }
 
     @org.junit.jupiter.api.Test
     void getInt_existing() {
-        int result = LocalSave.getInt(IntPropertyName).get();
-        assert (result == IntValue);
+        Optional<Integer> result = LocalSave.getInt(IntPropertyName);
+        assert (result.get() == IntValue);
     }
 
     @org.junit.jupiter.api.Test
     void getMapValue(){
-       String value = LocalSave.getMapValue(TestMapPropertyName, TestMapKey);
-       assert (value.equals(TestMapValue));
+        var value = LocalSave.getMapString(MapPropertyName, TestMapKey);
+        assert (value.get().equals(TestMapValue));
     }
 
     @org.junit.jupiter.api.Test
     void getMapValue_invalidKey(){
-        String value = LocalSave.getMapValue(MapPropertyName, "notValidKey");
-        assert (value == null);
+        var result = LocalSave.getMapString(MapPropertyName, "notValidKey");
+        assert (result.get() == null);
     }
 
     @org.junit.jupiter.api.Test
     void getMapValue_nullKey(){
-        String value = LocalSave.getMapValue(MapPropertyName, null);
-        assert (value == null);
+        var result = LocalSave.getMapString(MapPropertyName, null);
+        assert (result.get() == null);
+    }
+
+    @org.junit.jupiter.api.Test
+    void getMapValues_valid(){
+        Map<String,String> map = LocalSave.getMapValues(MapPropertyName);
+        assert (map.get(TestMapKey).equals(TestMapValue));
+        assert (map.get(TestMapKey2)==(null));
     }
 
     @org.junit.jupiter.api.AfterAll

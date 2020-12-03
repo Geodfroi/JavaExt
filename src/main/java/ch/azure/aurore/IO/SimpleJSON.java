@@ -8,8 +8,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
+import java.util.function.BiConsumer;
 
 public class SimpleJSON {
 
@@ -102,14 +102,13 @@ public class SimpleJSON {
         }
     }
 
-    public void setMapValue(String valueName, String key, String value) {
+    public void setMapValue(String mapName, String key, int value) {
         try {
             ObjectNode rootNode = getRootNode();
-            JsonNode mapNode = rootNode.get(valueName);
-            if (mapNode == null) {
-                mapNode = mapper.createObjectNode();
-                rootNode.set(valueName, mapNode);
-            }
+            if (!rootNode.hasNonNull(mapName))
+                rootNode.set(mapName, mapper.createObjectNode());
+
+            JsonNode mapNode = rootNode.get(mapName);
             ((ObjectNode) mapNode).put(key, value);
 
             write(rootNode);
@@ -118,23 +117,75 @@ public class SimpleJSON {
         }
     }
 
-    public String getMapValue(String valueName, String key) {
+    public void setMapValue(String mapName, String key, String value) {
 
         try {
-            JsonNode rootNode = getRootNode();
-            JsonNode mapNode = rootNode.get(valueName);
-            if (mapNode == null) {
-                return null;
-            }
+            ObjectNode rootNode = getRootNode();
+            if (!rootNode.hasNonNull(mapName))
+                rootNode.set(mapName, mapper.createObjectNode());
 
-            if (mapNode.hasNonNull(key))
-                return mapNode.path(key).asText();
+            ObjectNode mapNode = (ObjectNode)rootNode.get(mapName);
+            mapNode.put(key, value);
 
-            return null;
+            write(rootNode);
         } catch (IOException e) {
             e.printStackTrace();
-            return null;
         }
+    }
+
+    private JsonNode getMapNode_read(String mapName, String key) {
+        try {
+            ObjectNode rootNode = getRootNode();
+
+            if (rootNode.hasNonNull(mapName)) {
+                JsonNode mapNode = rootNode.get(mapName);
+                if (mapNode.hasNonNull(key))
+                    return mapNode.path(key);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public Optional<Integer> getMapInteger(String mapName, String key) {
+        JsonNode node = getMapNode_read(mapName, key);
+        if (node != null)
+            return Optional.of(node.asInt());
+
+        return Optional.empty();
+    }
+
+    public Optional<String> getMapStr(String mapName, String key) {
+        JsonNode node = getMapNode_read(mapName, key);
+        if (node != null)
+            return Optional.of(node.asText());
+
+        return Optional.empty();
+    }
+
+    public Map<String, String> getMapValues(String mapName) {
+
+        HashMap<String,String> map = new HashMap<>();
+        try {
+            JsonNode rootNode = getRootNode();
+            if (rootNode.hasNonNull(mapName)){
+                JsonNode mapNode = rootNode.get(mapName);
+
+                Iterator<String> iterator = mapNode.fieldNames();
+                while (iterator.hasNext()){
+                    String field = iterator.next();
+                    String value = mapNode.get(field).asText();
+                    if (value.equals("null"))
+                        value = null;
+
+                    map.put(field, value);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return map;
     }
 
     private void write(JsonNode rootNode) throws IOException {
@@ -148,6 +199,4 @@ public class SimpleJSON {
             throw  new IOException(e.getMessage());
         }
     }
-
-
 }
