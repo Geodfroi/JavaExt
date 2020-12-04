@@ -11,6 +11,11 @@ public class LocalSave {
 
     static SimpleJSON fileAccess = new SimpleJSON(SETTINGS_FILE_NAME);
 
+    public static void clear()
+    {
+        fileAccess.clear();
+    }
+
     public static Optional<Integer> getInt(String valueName) {
         return fileAccess.getInt(valueName);
     }

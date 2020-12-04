@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.function.BiConsumer;
 
 public class SimpleJSON {
 
@@ -18,6 +17,14 @@ public class SimpleJSON {
 
     public SimpleJSON(String settingsFileName) {
         path = Path.of(settingsFileName);
+    }
+
+    public void clear() {
+        try {
+            Files.writeString(path, "{}");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private ObjectNode getRootNode() throws IOException {
@@ -199,4 +206,6 @@ public class SimpleJSON {
             throw  new IOException(e.getMessage());
         }
     }
+
+
 }

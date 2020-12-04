@@ -1,6 +1,6 @@
 package ch.azure.aurore.IO;
 
-import ch.azure.aurore.IO.API.FileHelper;
+import ch.azure.aurore.IO.API.Disk;
 import org.junit.jupiter.api.Assertions;
 
 import java.util.Optional;
@@ -14,13 +14,13 @@ class DataStTest {
     @org.junit.jupiter.api.Test
     void backupFile()
     {
-        FileHelper.backupFile(FILE_PATH);
+        Disk.backupFile(FILE_PATH);
     }
 
     @org.junit.jupiter.api.Test
     void getExtension()
     {
-        Optional<String> result = FileHelper.getExtension(FILE_PATH);
+        Optional<String> result = Disk.getExtension(FILE_PATH);
         Assertions.assertTrue(result.isPresent());
         Assertions.assertEquals(result.get(), ".txt");
     }
@@ -28,7 +28,7 @@ class DataStTest {
     @org.junit.jupiter.api.Test
     void getExtension_severalPoints()
     {
-        Optional<String> result = FileHelper.getExtension("fileWithSeveral.point.txt");
+        Optional<String> result = Disk.getExtension("fileWithSeveral.point.txt");
         Assertions.assertTrue(result.isPresent());
         Assertions.assertEquals(result.get(), ".txt");
     }
@@ -36,33 +36,33 @@ class DataStTest {
     @org.junit.jupiter.api.Test
     void getExtension_invalid()
     {
-        Optional<String> result = FileHelper.getExtension("invalidStrWithoutPoint");
+        Optional<String> result = Disk.getExtension("invalidStrWithoutPoint");
         Assertions.assertTrue(result.isEmpty());
     }
 
     @org.junit.jupiter.api.Test
     void getFileNameWithoutExt()
     {
-        String result = FileHelper.getFileNameWithoutExt(FILE_PATH);
+        String result = Disk.getFileNameWithoutExt(FILE_PATH);
         Assertions.assertEquals(result, "TestFile");
     }
 
     @org.junit.jupiter.api.Test
     void openFile_file(){
-        FileHelper.openFile(FILE_PATH);
+        Disk.openFile(FILE_PATH);
     }
 
     @org.junit.jupiter.api.Test
     void openFile_invalid(){
-        FileHelper.openFile("invalidStr");
+        Disk.openFile("invalidStr");
     }
     @org.junit.jupiter.api.Test
     void openFile_null(){
-        FileHelper.openFile(null);
+        Disk.openFile(null);
     }
 
     @org.junit.jupiter.api.Test
     void openFile_folder(){
-        FileHelper.openFile(FOLDER_PATH);
+        Disk.openFile(FOLDER_PATH);
     }
 }

@@ -1,0 +1,78 @@
+package ch.azure.aurore.images.API;
+
+import org.apache.commons.imaging.*;
+import org.apache.commons.imaging.formats.png.PngConstants;
+
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
+public class Images {
+
+    public static Optional<BufferedImage> toImage(byte[] array){
+        if (array != null || array.length >0){
+            try {
+                var img = Imaging.getBufferedImage(array);
+                 File f = new File("wf.png");
+                try {
+                    Imaging.writeImage(img,f, ImageFormats.PNG, null);
+                } catch (ImageWriteException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                return Optional.of(Imaging.getBufferedImage(array));
+            } catch (ImageReadException | IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return Optional.empty();
+    }
+
+    public static File getFile(byte[] array){
+
+        try {
+            var img = toImage(array);
+            File f = new File("wf.png");
+            Imaging.writeImage(img.get(),f, ImageFormats.PNG, null);
+            return f;
+
+        } catch (ImageWriteException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+//    public static Optional<WritableImage> toFXImage(byte[] array){
+//        Optional<BufferedImage> result = toImage(array);
+//        if (result.isPresent()){
+//            WritableImage wi = SwingFXUtils.toFXImage(result.get(), null);
+//            return Optional.of(wi);
+//        }
+//        return Optional.empty();
+//    }
+
+    public static Optional<byte[]> toByteArray(File file){
+        try {
+            BufferedImage image = Imaging.getBufferedImage(file);
+            try {
+                final Map<String, Object> params = new HashMap<>();
+                params.put(ImagingConstants.PARAM_KEY_COMPRESSION,
+                        PngConstants.PARAM_KEY_PNG_FORCE_TRUE_COLOR);
+                byte[] array = Imaging.writeImageToBytes(image, ImageFormats.PNG, null);
+                return Optional.of(array);
+            } catch (ImageWriteException e) {
+                e.printStackTrace();
+            }
+        } catch (ImageReadException | IOException e) {
+            e.printStackTrace();
+        }
+        return Optional.empty();
+    }
+}

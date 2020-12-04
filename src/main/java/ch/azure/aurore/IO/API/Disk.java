@@ -4,13 +4,14 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.awt.Desktop;
 
-public class FileHelper {
+public class Disk {
 
     public static final String BACKUP_FOLDER_NAME = "Backups";
 
@@ -47,9 +48,9 @@ public class FileHelper {
         }
 
         String fileName = path1.getFileName().toString();
-        String rootName = FileHelper.getFileNameWithoutExt(fileName);
+        String rootName = Disk.getFileNameWithoutExt(fileName);
 
-        Optional<String> extValue = FileHelper.getExtension(fileName);
+        Optional<String> extValue = Disk.getExtension(fileName);
         if (extValue.isEmpty()) {
             System.out.println("backup failed : Can't get file extension");
             return;
@@ -79,5 +80,19 @@ public class FileHelper {
         catch (IllegalArgumentException e){
             System.out.println("openFile failed: can't find ["+ pathStr + "] file");
         }
+    }
+
+    /**
+     * Delete file from disk
+     * @param pathStr the path on disk
+     * @return true if file was correctly deleted
+     */
+    public static boolean removeFile(String pathStr){
+        try {
+            return Files.deleteIfExists(Paths.get(pathStr));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 }
