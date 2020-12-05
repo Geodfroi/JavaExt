@@ -3,6 +3,7 @@ package ch.azure.aurore.IO;
 import ch.azure.aurore.IO.API.Disk;
 import org.junit.jupiter.api.Assertions;
 
+import java.io.File;
 import java.util.Optional;
 
 class DataStTest {
@@ -58,7 +59,7 @@ class DataStTest {
     }
     @org.junit.jupiter.api.Test
     void openFile_null(){
-        Disk.openFile(null);
+        Disk.openFile((File)null);
     }
 
     @org.junit.jupiter.api.Test

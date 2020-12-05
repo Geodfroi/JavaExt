@@ -68,18 +68,21 @@ public class Disk {
         }
     }
 
-    public static void openFile(String pathStr){
-        if (pathStr == null || pathStr.isEmpty() || pathStr.isBlank() )
+    public static void openFile(File file){
+        if (file == null){
             return;
-
+        }
         try {
-            Desktop.getDesktop().open(new File(pathStr));
+            Desktop.getDesktop().open(file);
         } catch (IOException e) {
             System.out.println("openFile failed: " + e.getMessage());
         }
-        catch (IllegalArgumentException e){
-            System.out.println("openFile failed: can't find ["+ pathStr + "] file");
-        }
+    }
+
+    public static void openFile(String pathStr){
+        if (pathStr == null || pathStr.isEmpty() || pathStr.isBlank() )
+            return;
+        openFile(new File(pathStr));
     }
 
     /**

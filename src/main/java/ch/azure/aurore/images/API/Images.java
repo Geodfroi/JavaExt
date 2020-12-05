@@ -13,17 +13,17 @@ import java.util.Optional;
 public class Images {
 
     public static Optional<BufferedImage> toImage(byte[] array){
-        if (array != null || array.length >0){
+        if (array != null && array.length > 0){
             try {
-                var img = Imaging.getBufferedImage(array);
-                 File f = new File("wf.png");
-                try {
-                    Imaging.writeImage(img,f, ImageFormats.PNG, null);
-                } catch (ImageWriteException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                BufferedImage img = Imaging.getBufferedImage(array);
+                // File f = new File("wf.png");
+//                try {
+//                    Imaging.writeImage(img,f, ImageFormats.PNG, null);
+//                } catch (ImageWriteException e) {
+//                    e.printStackTrace();
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
 
                 return Optional.of(Imaging.getBufferedImage(array));
             } catch (ImageReadException | IOException e) {
@@ -33,19 +33,24 @@ public class Images {
         return Optional.empty();
     }
 
-    public static File getFile(byte[] array){
+    public static File toFile(byte[] array, String filePath){
 
         try {
-            var img = toImage(array);
-            File f = new File("wf.png");
-            Imaging.writeImage(img.get(),f, ImageFormats.PNG, null);
-            return f;
+            Optional<BufferedImage> img = toImage(array);
+            if (img.isPresent()){
 
-        } catch (ImageWriteException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
+                File file = new File(filePath);
+                File parent = file.getParentFile();
+                if (!parent.exists() && !parent.mkdirs()) {
+                    throw new IllegalStateException("couldn't create parent directories: " + parent);
+                }
+                Imaging.writeImage(img.get(),file, ImageFormats.PNG, null);
+                return file;
+            }
+        } catch (ImageWriteException | IOException | IllegalStateException e) {
             e.printStackTrace();
         }
+        System.out.println("failed to export file");
         return null;
     }
 
