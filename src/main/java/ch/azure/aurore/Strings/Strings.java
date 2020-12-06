@@ -1,5 +1,7 @@
 package ch.azure.aurore.Strings;
 
+import java.util.Collection;
+
 public class Strings {
 
     public static String toFirstLower(String str){
@@ -47,6 +49,41 @@ public class Strings {
             }
         }
         return sb.toString();
+    }
+
+    public static String toString(Collection<?> collection) {
+        return toString(collection, ", ");
+    }
+
+    public static String toString(Collection<?> a, String separator) {
+
+        if (a == null)
+            return "";
+        int size = a.size();
+        if (size == 0) {
+            return "";
+        }
+
+        StringBuilder str = new StringBuilder();
+        boolean hasFormerItem = false;
+
+        for (var item:a) {
+            if (item == null)
+                continue;
+            if (item instanceof String){
+                String s = (String)item;
+                if (s.isEmpty() || s.isBlank())
+                    continue;
+            }
+            if (hasFormerItem){
+                str.append(separator);
+            }
+            str.append(item.toString());
+            hasFormerItem = true;
+
+        }
+
+        return  str.toString();
     }
 
     public static String unCamel(String str){

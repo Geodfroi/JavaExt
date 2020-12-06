@@ -1,5 +1,7 @@
 package ch.azure.aurore.IO.API;
 
+import ch.azure.aurore.Strings.Strings;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -97,5 +99,14 @@ public class Disk {
             e.printStackTrace();
         }
         return false;
+    }
+
+    public static String removeExtension(String str){
+        if (Strings.isNullOrEmpty(str))
+            return "";
+        if (!str.contains("."))
+            return str;
+
+        return str.substring(0, str.lastIndexOf("."));
     }
 }
