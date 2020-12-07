@@ -54,6 +54,11 @@ public class JSONFile extends ReadOnlyJSONFile {
         text.ifPresent(this::setText);
     }
 
+    public void setMapValue(String propertyName, int key, int value) {
+        Optional<String> text = JSONFile.setMapValue(propertyName, key , value, getText());
+        text.ifPresent(this::setText);
+    }
+
     public void setDoubles(String propertyName, List<Double> list) {
         Optional<String> text = JSONFile.setDoubles(propertyName, list, getText());
         text.ifPresent(this::setText);
@@ -67,5 +72,14 @@ public class JSONFile extends ReadOnlyJSONFile {
     public void setStrings(String propertyName, List<String> list) {
         Optional<String> text = JSONFile.setStrings(propertyName, list, getText());
         text.ifPresent(this::setText);
+    }
+
+    private void setText(String txt){
+        try {
+            this.txt = txt;
+            Files.writeString(path, txt);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

@@ -12,7 +12,7 @@ import java.util.Optional;
 public class ReadOnlyJSONFile {
 
     protected final Path path;
-    private String txt;
+    protected String txt;
 
     SimpleJSON JSONFile = new SimpleJSON();
 
@@ -31,7 +31,7 @@ public class ReadOnlyJSONFile {
     public Optional<Integer> getInteger(String propertyName) {
         return JSONFile.getInt(propertyName, getText());
     }
-    
+
     public Optional<List<Integer>> getIntegers(String propertyName){
         return JSONFile.getInts(propertyName, getText());
     }
@@ -52,8 +52,16 @@ public class ReadOnlyJSONFile {
         return JSONFile.getMapInteger(mapName, key, getText());
     }
 
+    public Optional<Integer> getMapInteger(String mapName, int key){
+        return JSONFile.getMapInteger(mapName, key, getText());
+    }
+
+    public Optional<String> getMapString(String mapName, int key) {
+        return JSONFile.getMapString(mapName, key, getText());
+    }
+
     public Optional<String> getMapString(String mapName, String key) {
-        return JSONFile.getMapStr(mapName, key, getText());
+        return JSONFile.getMapString(mapName, key, getText());
     }
 
     public Map<String, String> getMapValues(String propertyName){
@@ -65,18 +73,6 @@ public class ReadOnlyJSONFile {
             txt = readFileText();
         }
         return txt;
-    }
-
-    void setText(String txt){
-//        if (str.isPresent())
-//        {
-//            this.txt = str.get();
-            try {
-                Files.writeString(path, txt);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-//        }
     }
 
     private String readFileText()

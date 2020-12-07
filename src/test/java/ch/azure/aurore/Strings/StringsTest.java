@@ -1,5 +1,7 @@
 package ch.azure.aurore.Strings;
 
+import org.junit.jupiter.api.Assertions;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -7,8 +9,8 @@ import java.util.List;
 
 class StringsTest {
 
-    private static final String CAMEL_TEST_STRING = "TeSt strIng";
-    private static final String CAMEL_EXPECTED_STRING = "testString";
+    private static final String CAMEL_TEST_STRING = "Test string";
+    private static final String CAMEL_EXPECTED_STRING = "TestString";
 
     private static final String REVERT_CAMEL_TEST_STRING = "ArgentMonty";
     private static final String REVERT_CAMEL_EXPECTED_STRING = "Argent monty";
@@ -30,7 +32,7 @@ class StringsTest {
     void camel()
     {
         String str = Strings.camel(CAMEL_TEST_STRING);
-        assert (str.equals(CAMEL_EXPECTED_STRING));
+        Assertions.assertEquals(str, CAMEL_EXPECTED_STRING);
     }
 
     @org.junit.jupiter.api.Test
@@ -63,7 +65,7 @@ class StringsTest {
         list.add(89);
 
         String expected = "43, 64, 89";
-        assert Strings.toString(list).equals(expected);
+        Assertions.assertEquals(Strings.toString(list), expected);
     }
 
     @org.junit.jupiter.api.Test
@@ -75,7 +77,18 @@ class StringsTest {
         list.add(89);
 
         String expected = "43, 89";
-        assert Strings.toString(list).equals(expected);
+        Assertions.assertEquals(Strings.toString(list), expected);
+    }
+
+    @org.junit.jupiter.api.Test
+    void collectionToString_stream()
+    {
+        List<String> list = new ArrayList<>();
+        list.add("adam");
+        list.add("eve");
+        String expected = "adam&eve";
+
+        Assertions.assertEquals(Strings.toString(list.stream(),"&"), expected);
     }
 
     @org.junit.jupiter.api.Test
@@ -86,7 +99,7 @@ class StringsTest {
         list.add("Ivy");
 
         String expected = "albert--john--Ivy";
-        assert Strings.toString(list, "--").equals(expected);
+        Assertions.assertEquals(Strings.toString(list, "--"), expected);
     }
 
     @org.junit.jupiter.api.Test
@@ -97,17 +110,17 @@ class StringsTest {
         list.add("Ivy");
 
         String expected = "albert--Ivy";
-        assert Strings.toString(list, "--").equals(expected);
+        Assertions.assertEquals(Strings.toString(list, "--"), expected);
     }
 
     @org.junit.jupiter.api.Test
     void listToString_empty() {
         List<String> list = new ArrayList<>();
-        assert Strings.toString(list, "--").equals("");
+        Assertions.assertEquals(Strings.toString(list, "--"),"");
     }
 
     @org.junit.jupiter.api.Test
     void listToString_null() {
-        assert Strings.toString(null, "--").equals("");
+        Assertions.assertEquals(Strings.toString((List<String>)null, "--"),"");
     }
 }

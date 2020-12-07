@@ -1,7 +1,9 @@
 package ch.azure.aurore.IO.API;
 
 import ch.azure.aurore.Strings.Strings;
+import org.javatuples.KeyValue;
 
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -10,12 +12,15 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Optional;
-import java.awt.Desktop;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class Disk {
 
     public static final String BACKUP_FOLDER_NAME = "Backups";
+    private static final int BACKUP_DEFAULT_FILE_LIMIT = 6;
 
     /**
      *
@@ -28,63 +33,99 @@ public class Disk {
                 .map(f -> f.substring(filename.lastIndexOf(".")));
     }
 
-    public static String getFileNameWithoutExt(String pathStr) {
-        pathStr = Path.of(pathStr).getFileName().toString();
-        return pathStr.substring(0, pathStr.lastIndexOf("."));
+    public static String getFileName(String pathStr, Boolean withExtension) {
+        if (Strings.isNullOrEmpty(pathStr))
+            return "";
+
+        String fileName = Path.of(pathStr).getFileName().toString();
+        if (withExtension)
+            return fileName;
+        else
+            return removeExtension(fileName);
     }
 
-    public static void backupFile(String pathStr) {
+    public static boolean backupFile(String pathStr) {
+        return backupFile(pathStr, BACKUP_DEFAULT_FILE_LIMIT);
+    }
+
+    public static boolean backupFile(String pathStr, int fileLimit) {
         Path path1 = Path.of(pathStr);
-        if (!Files.exists(path1))
-            return;
+        if (!Files.exists(path1) || !Files.isRegularFile(path1))
+            return false;
+
+        Optional<String> extValue = Disk.getExtension(pathStr);
+        if (extValue.isEmpty()) {
+            System.out.println("backup failed : Can't get file extension");
+            return false;
+        }
 
         Path parentPath = path1.getParent();
         Path backupPath = Path.of(parentPath.toString(), BACKUP_FOLDER_NAME);
 
-        if (!Files.exists(backupPath)) {
-            try {
-                Files.createDirectory(backupPath);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
         String fileName = path1.getFileName().toString();
-        String rootName = Disk.getFileNameWithoutExt(fileName);
+        String fileNameWithoutExt = Disk.removeExtension(fileName);
 
-        Optional<String> extValue = Disk.getExtension(fileName);
-        if (extValue.isEmpty()) {
-            System.out.println("backup failed : Can't get file extension");
-            return;
+        try{
+            if (!Files.exists(backupPath)) {
+                Files.createDirectories(backupPath);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
-        String copyName = rootName + "_" + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyLLdd")) + extValue.get();
+        String copyName = fileNameWithoutExt + "_" + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyLLdd")) + extValue.get();
         Path destination = backupPath.resolve(copyName);
-        System.out.println(destination);
 
         try {
             Files.copy(path1, destination, StandardCopyOption.REPLACE_EXISTING);
-            System.out.println(path1 + " backed up to " + destination);
+
+            // identify with regex then sort from newest to oldest
+            Pattern pattern = Pattern.compile("^" + fileNameWithoutExt + "_(\\d{8})" + extValue.get() + "$");
+            List<Path> backedFiles = Files.list(backupPath).
+                    map(f -> new KeyValue<>(f, pattern.matcher(f.getFileName().toString()))).
+                    filter(i -> i.getValue().matches()).
+                    sorted((o1, o2) -> -Integer.compare(Integer.parseInt(o1.getValue().group(1)), Integer.parseInt(o2.getValue().group(1)))).
+                    map(KeyValue::getKey).
+                    collect(Collectors.toList());
+
+            for (int n = 0; n < backedFiles.size(); n++) {
+                   if (n>=fileLimit){
+                       Files.delete(backedFiles.get(n));
+                   }
+            }
+            return true;
         } catch (IOException e) {
-            System.out.println("Backup failed: " + e.getMessage());
+            System.out.println("Backup copy failed " + e.getMessage());
+            return false;
         }
     }
 
-    public static void openFile(File file){
-        if (file == null){
-            return;
+    public static boolean openFile(File file){
+        if (file == null || !file.exists()){
+            return false;
         }
         try {
             Desktop.getDesktop().open(file);
+            return true;
         } catch (IOException e) {
             System.out.println("openFile failed: " + e.getMessage());
+            return false;
         }
     }
 
-    public static void openFile(String pathStr){
+    public static boolean openFile(String pathStr){
         if (pathStr == null || pathStr.isEmpty() || pathStr.isBlank() )
-            return;
-        openFile(new File(pathStr));
+            return false;
+        return openFile(new File(pathStr));
+    }
+
+    public static String removeExtension(String pathStr){
+        if (Strings.isNullOrEmpty(pathStr))
+            return "";
+        if (!pathStr.contains("."))
+            return pathStr;
+
+        return pathStr.substring(0, pathStr.lastIndexOf("."));
     }
 
     /**
@@ -101,12 +142,18 @@ public class Disk {
         return false;
     }
 
-    public static String removeExtension(String str){
-        if (Strings.isNullOrEmpty(str))
-            return "";
-        if (!str.contains("."))
-            return str;
+    public static boolean writeFile(Path path, String content){
 
-        return str.substring(0, str.lastIndexOf("."));
+        if (path == null || !Files.exists(path) || !Files.isRegularFile(path))
+            return false;
+
+        try {
+            Files.writeString(path, content);
+            return true;
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println("failed to write file: " + path);
+            return false;
+        }
     }
 }

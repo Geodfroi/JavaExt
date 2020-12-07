@@ -114,12 +114,20 @@ public class SimpleJSON {
         return Optional.empty();
     }
 
-    public Optional<String> getMapStr(String mapName, String key, String txt) {
+    public Optional<Integer> getMapInteger(String mapName, int key, String txt) {
+        return getMapInteger(mapName, Integer.toString(key),txt);
+    }
+
+    public Optional<String> getMapString(String mapName, String key, String txt) {
         JsonNode node = getMapNode_read(mapName, key, txt);
         if (node != null)
             return Optional.of(node.asText());
 
         return Optional.empty();
+    }
+
+    public Optional<String> getMapString(String mapName, int key, String txt) {
+        return getMapString(mapName,Integer.toString(key), txt);
     }
 
     public Map<String, String> getMapValues(String mapName, String txt) {
@@ -217,7 +225,7 @@ public class SimpleJSON {
 
     public Optional<String> setMapValue(String mapName, String key, int value, String txt) {
 
-        var rootNode = (ObjectNode) getRootNode(txt);
+        ObjectNode rootNode = getRootNode(txt);
         if (!rootNode.hasNonNull(mapName))
             rootNode.set(mapName, mapper.createObjectNode());
 
@@ -225,7 +233,14 @@ public class SimpleJSON {
         ((ObjectNode) mapNode).put(key, value);
 
         return write(rootNode);
+    }
 
+    public Optional<String> setMapValue(String mapName, int key, String value, String txt) {
+        return setMapValue(mapName, Integer.toString(key), value, txt);
+    }
+
+    public Optional<String> setMapValue(String mapName, int key, int value, String txt) {
+        return setMapValue(mapName, Integer.toString(key), value, txt);
     }
 
     public Optional<String> setMapValue(String mapName, String key, String value, String txt) {
@@ -269,6 +284,4 @@ public class SimpleJSON {
         }
         return Optional.empty();
     }
-
-
 }

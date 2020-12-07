@@ -2,6 +2,7 @@ module JavaExt {
     requires com.fasterxml.jackson.databind;
     requires java.desktop;
     requires org.apache.commons.imaging;
+    requires javatuples;
 
     exports ch.azure.aurore.IO.API;
     exports ch.azure.aurore.IO.exceptions;
