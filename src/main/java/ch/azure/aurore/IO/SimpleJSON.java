@@ -1,6 +1,6 @@
 package ch.azure.aurore.IO;
 
-import ch.azure.aurore.Strings.Strings;
+import ch.azure.aurore.strings.Strings;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

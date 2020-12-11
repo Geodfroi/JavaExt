@@ -7,8 +7,7 @@ module JavaExt {
     exports ch.azure.aurore.IO.API;
     exports ch.azure.aurore.IO.exceptions;
     exports ch.azure.aurore.IO.jsonFiles;
-    exports ch.azure.aurore.Lists;
-    exports ch.azure.aurore.Strings;
+    exports ch.azure.aurore.collections;
+    exports ch.azure.aurore.strings;
     exports ch.azure.aurore.images.API;
-
 }

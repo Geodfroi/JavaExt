@@ -1,10 +1,8 @@
-package ch.azure.aurore.Strings;
+package ch.azure.aurore.strings;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class Strings {
@@ -56,11 +54,10 @@ public class Strings {
         return sb.toString();
     }
 
-
-
     public static String toString(Stream<?> st) {
         return toString(st, ", ");
     }
+
     public static String toString(Collection<?> st) {
         return toString(st, ", ");
     }

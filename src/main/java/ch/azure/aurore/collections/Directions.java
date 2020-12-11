@@ -1,4 +1,4 @@
-package ch.azure.aurore.Lists;
+package ch.azure.aurore.collections;
 
 public enum Directions
 {

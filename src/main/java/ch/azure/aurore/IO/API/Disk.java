@@ -1,6 +1,6 @@
 package ch.azure.aurore.IO.API;
 
-import ch.azure.aurore.Strings.Strings;
+import ch.azure.aurore.strings.Strings;
 import org.javatuples.KeyValue;
 
 import java.awt.*;

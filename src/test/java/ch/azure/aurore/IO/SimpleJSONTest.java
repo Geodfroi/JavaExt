@@ -1,6 +1,6 @@
 package ch.azure.aurore.IO;
 
-import ch.azure.aurore.Strings.Strings;
+import ch.azure.aurore.strings.Strings;
 import org.junit.jupiter.api.Assertions;
 
 import java.util.ArrayList;

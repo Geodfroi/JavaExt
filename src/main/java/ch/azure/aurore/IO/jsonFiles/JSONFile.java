@@ -12,11 +12,7 @@ public class JSONFile extends ReadOnlyJSONFile {
     }
 
     public void clear() {
-        try {
-            Files.writeString(path, "{}");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        setText("{}");
     }
 
     public void set(String propertyName, int value) {

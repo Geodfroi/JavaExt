@@ -1,4 +1,4 @@
-package ch.azure.aurore.Lists;
+package ch.azure.aurore.collections;
 import java.util.ArrayList;
 import java.util.List;
 

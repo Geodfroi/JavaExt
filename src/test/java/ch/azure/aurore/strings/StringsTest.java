@@ -1,4 +1,4 @@
-package ch.azure.aurore.Strings;
+package ch.azure.aurore.strings;
 
 import org.junit.jupiter.api.Assertions;
 
