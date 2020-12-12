@@ -1,6 +1,7 @@
 package ch.azure.aurore.strings;
 
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -54,17 +55,25 @@ public class Strings {
         return sb.toString();
     }
 
-    public static String toString(Stream<?> st) {
-        return toString(st, ", ");
+    public static String toString(Stream<?> stream) {
+        return toString(stream, ", ");
+    }
+
+    public static String toString(Stream<?> stream, String separator) {
+        List<?> list = stream.collect(Collectors.toList());
+        return toString(list, separator);
+    }
+
+    public static <T> String toString(Stream<T> stream, Comparator<T> comparator) {
+        return toString(stream, comparator, ", ");
+    }
+
+    public static <T> String toString(Stream<T> stream, Comparator<T> comparator, String separator) {
+        return toString(stream.sorted(comparator), separator);
     }
 
     public static String toString(Collection<?> st) {
         return toString(st, ", ");
-    }
-
-    public static String toString(Stream<?> st, String separator) {
-        List<?> list = st.collect(Collectors.toList());
-        return toString(list, separator);
     }
 
     public static String toString(Collection<?> list, String separator) {
@@ -91,6 +100,14 @@ public class Strings {
         }
 
         return  str.toString();
+    }
+
+    public static <T> String toString(Collection<T> list, Comparator<T> comparator) {
+        return toString(list.stream().sorted(comparator));
+    }
+
+    public static <T> String toString(Collection<T> list, Comparator<T> comparator, String separator) {
+        return toString(list.stream().sorted(comparator), separator);
     }
 
     public static String unCamel(String str){

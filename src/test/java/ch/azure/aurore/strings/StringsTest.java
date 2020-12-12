@@ -69,6 +69,17 @@ class StringsTest {
     }
 
     @org.junit.jupiter.api.Test
+    void listToString_ints_order() {
+
+        List<Integer> list = new ArrayList<>();
+        list.add(300);
+        list.add(100);
+        list.add(200);
+        String expected = "100, 200, 300";
+        Assertions.assertEquals(Strings.toString(list, Integer::compareTo), expected);
+    }
+
+    @org.junit.jupiter.api.Test
     void listToString_ints_nullMember() {
 
         List<Integer> list = new ArrayList<>();

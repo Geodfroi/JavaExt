@@ -10,4 +10,5 @@ module JavaExt {
     exports ch.azure.aurore.collections;
     exports ch.azure.aurore.strings;
     exports ch.azure.aurore.images.API;
+    exports ch.azure.aurore.tuples;
 }

@@ -25,6 +25,13 @@ public class NavStack<T> {
         index = list.size()-1;
     }
 
+    public boolean canNavigate(Directions direction){
+        if (direction == Directions.backward){
+            return hasFormer();
+        }
+        return hasNext();
+    }
+
     public void clear() {
         list.clear();
         index =-1;
