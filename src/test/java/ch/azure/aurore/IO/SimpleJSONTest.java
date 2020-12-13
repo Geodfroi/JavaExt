@@ -3,10 +3,7 @@ package ch.azure.aurore.IO;
 import ch.azure.aurore.strings.Strings;
 import org.junit.jupiter.api.Assertions;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 class SimpleJSONTest {
 
@@ -235,8 +232,8 @@ class SimpleJSONTest {
     @org.junit.jupiter.api.Test
     void setDoubles() {
         String propertyName = "numbers";
-        List<Double> list = new ArrayList<>(Arrays.asList(4.0,25.2,8.9));
-        String expected = "{\r\n  \"" + propertyName + "\" : [ " + Strings.toString(list, ", ") + " ]\r\n}";
+        double[] list = new double[]{25.2, 8.9, 42.23};
+        String expected = "{\r\n  \"" + propertyName + "\" : [ " + Strings.toString(Collections.singleton(list), ", ") + " ]\r\n}";
         Optional<String> result = jsonFile.setDoubles(propertyName, list, EMPTY_TEXT);
         assert (result.isPresent() && result.get().equals(expected));
     }
@@ -254,8 +251,8 @@ class SimpleJSONTest {
     @org.junit.jupiter.api.Test
     void setInts() {
         String propertyName = "numbers";
-        List<Integer> list = new ArrayList<>(Arrays.asList(4,25,8));
-        String expected = "{\r\n  \"" + propertyName + "\" : [ " + Strings.toString(list, ", ") + " ]\r\n}";
+        int[] list = new int[]{4,25,8};
+        String expected = "{\r\n  \"" + propertyName + "\" : [ " + Strings.toString(Collections.singleton(list), ", ") + " ]\r\n}";
         Optional<String> result = jsonFile.setInts(propertyName, list, EMPTY_TEXT);
         assert (result.isPresent() && result.get().equals(expected));
     }
@@ -351,8 +348,8 @@ class SimpleJSONTest {
     @org.junit.jupiter.api.Test
     void setStrings() {
         String propertyName = "days";
-        List<String> list = new ArrayList<>(Arrays.asList("monday","wednesday","friday"));
-        String expected = "{\r\n  \"" + propertyName + "\" : [ \"" + Strings.toString(list, "\", \"") + "\" ]\r\n}";
+        String[] list = new String[]{"monday","wednesday","friday"};
+        String expected = "{\r\n  \"" + propertyName + "\" : [ \"" + Strings.toString(Arrays.stream(list), "\", \"") + "\" ]\r\n}";
         Optional<String> result = jsonFile.setStrings(propertyName, list, EMPTY_TEXT);
         assert (result.isPresent() && result.get().equals(expected));
     }

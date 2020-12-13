@@ -92,7 +92,6 @@ public class SimpleJSON {
         return Optional.empty();
     }
 
-
     private JsonNode getMapNode_read(String mapName, String key, String txt) {
 
         JsonNode rootNode = getRootNode(txt);
@@ -189,13 +188,13 @@ public class SimpleJSON {
         return write(rootNode);
     }
 
-    public Optional<String> setDoubles(String propertyName, List<Double> list, String txt) {
+    public Optional<String> setDoubles(String propertyName, double[] array, String txt) {
         ObjectNode rootNode = getRootNode(txt);
-        if (list == null || list.size() == 0) {
+        if (array == null || array.length == 0) {
             rootNode.remove(propertyName);
         } else {
             ArrayNode node = mapper.createArrayNode();
-            for (Double i : list) {
+            for (Double i : array) {
                 node.add(i);
             }
             rootNode.set(propertyName, node);
@@ -209,13 +208,13 @@ public class SimpleJSON {
         return write(rootNode);
     }
 
-    public Optional<String> setInts(String propertyName, List<Integer> list, String txt) {
+    public Optional<String> setInts(String propertyName, int[] array, String txt) {
         ObjectNode rootNode = getRootNode(txt);
-        if (list == null || list.size() == 0) {
+        if (array == null || array.length == 0) {
             rootNode.remove(propertyName);
         } else {
             ArrayNode node = mapper.createArrayNode();
-            for (Integer i : list) {
+            for (Integer i : array) {
                 node.add(i);
             }
             rootNode.set(propertyName, node);
@@ -261,14 +260,14 @@ public class SimpleJSON {
         return write(rootNode);
     }
 
-    public Optional<String> setStrings(String propertyName, List<String> list, String str) {
+    public Optional<String> setStrings(String propertyName, String[] array, String str) {
 
         var rootNode = (ObjectNode) getRootNode(str);
-        if (list == null || list.size() == 0) {
+        if (array == null || array.length == 0) {
             rootNode.remove(propertyName);
         } else {
             ArrayNode node = mapper.createArrayNode();
-            for (String s : list) {
+            for (String s : array) {
                 node.add(s);
             }
             rootNode.set(propertyName, node);

@@ -58,6 +58,9 @@ public class Strings {
     public static String toString(Stream<?> stream) {
         return toString(stream, ", ");
     }
+    public static String toString(Collection<?> st) {
+        return toString(st, ", ");
+    }
 
     public static String toString(Stream<?> stream, String separator) {
         List<?> list = stream.collect(Collectors.toList());
@@ -70,10 +73,6 @@ public class Strings {
 
     public static <T> String toString(Stream<T> stream, Comparator<T> comparator, String separator) {
         return toString(stream.sorted(comparator), separator);
-    }
-
-    public static String toString(Collection<?> st) {
-        return toString(st, ", ");
     }
 
     public static String toString(Collection<?> list, String separator) {

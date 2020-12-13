@@ -1,7 +1,7 @@
 package ch.azure.aurore.IO.API;
 
 import ch.azure.aurore.strings.Strings;
-import org.javatuples.KeyValue;
+import ch.azure.aurore.tuples.KeyValuePair;
 
 import java.awt.*;
 import java.io.File;
@@ -82,10 +82,10 @@ public class Disk {
             // identify with regex then sort from newest to oldest
             Pattern pattern = Pattern.compile("^" + fileNameWithoutExt + "_(\\d{8})" + extValue.get() + "$");
             List<Path> backedFiles = Files.list(backupPath).
-                    map(f -> new KeyValue<>(f, pattern.matcher(f.getFileName().toString()))).
+                    map(f -> new KeyValuePair<>(f, pattern.matcher(f.getFileName().toString()))).
                     filter(i -> i.getValue().matches()).
                     sorted((o1, o2) -> -Integer.compare(Integer.parseInt(o1.getValue().group(1)), Integer.parseInt(o2.getValue().group(1)))).
-                    map(KeyValue::getKey).
+                    map(KeyValuePair::getKey).
                     collect(Collectors.toList());
 
             for (int n = 0; n < backedFiles.size(); n++) {
