@@ -1,12 +1,8 @@
 package ch.azure.aurore.IO.API;
 
+import ch.azure.aurore.IO.exceptions.MissingSettingException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class SettingsTest {
 
@@ -14,14 +10,13 @@ class SettingsTest {
 
     @Test
     void getSettings() {
-        Optional<List<Integer>> d =  Settings.getInstance().getIntegers("invalid");
-        assert d.isEmpty();
+        Assertions.assertThrows(MissingSettingException.class, () ->
+                Settings.getInstance().getIntegers("invalid"));
     }
 
     @Test
     void getSettings_valid() {
-        Optional<Integer> d =  Settings.getInstance().getInteger(PROPERTY_NAME);
-        assert d.isPresent();
-        Assertions.assertEquals(d.get(), 7);
+        int result =  Settings.getInstance().getInteger(PROPERTY_NAME);
+        Assertions.assertEquals(result, 7);
     }
 }
