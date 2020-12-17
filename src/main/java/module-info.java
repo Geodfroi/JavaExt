@@ -16,4 +16,5 @@ module JavaExt {
     exports ch.azure.aurore.tuples;
     exports ch.azure.aurore.fxml;
     exports ch.azure.aurore.sqlite;
+    exports ch.azure.aurore.reflection;
 }
