@@ -1,6 +1,6 @@
-package ch.azure.aurore.IO.jsonFiles;
+package ch.azure.aurore.json.jsonFiles;
 
-import ch.azure.aurore.IO.SimpleJSON;
+import ch.azure.aurore.json.SimpleJSON;
 
 import java.util.List;
 import java.util.Map;

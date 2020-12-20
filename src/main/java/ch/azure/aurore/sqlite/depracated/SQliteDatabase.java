@@ -1,4 +1,4 @@
-package ch.azure.aurore.sqlite;
+package ch.azure.aurore.sqlite.depracated;
 
 import ch.azure.aurore.IO.API.Disk;
 
@@ -7,6 +7,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.Collection;
 
+@Deprecated
 public abstract class SQliteDatabase {
 
     public static final String JDBC_SQLITE = "jdbc:sqlite:";

@@ -42,15 +42,15 @@ class Employee{
 
 class ReflectionTest {
 
-    @Test
-    void getGetterMethods(){
-        Method[] m = Reflection.getGetterMethods(Employee.class);
-        assert m.length ==4;
-    }
-    
-    @Test
-    void getSetterMethods(){
-        Method[] m = Reflection.getSetterMethods(Employee.class);
-        assert m.length ==3;
-    }
+//    @Test
+//    void getGetterMethods(){
+//        Method[] m = Reflection.getGetterMethods(Employee.class);
+//        assert m.length ==4;
+//    }
+//
+//    @Test
+//    void getSetterMethods(){
+//        Method[] m = Reflection.getSetterMethods(Employee.class);
+//        assert m.length ==3;
+//    }
 }

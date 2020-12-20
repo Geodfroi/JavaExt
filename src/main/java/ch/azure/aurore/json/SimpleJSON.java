@@ -1,4 +1,4 @@
-package ch.azure.aurore.IO;
+package ch.azure.aurore.json;
 
 import ch.azure.aurore.strings.Strings;
 import com.fasterxml.jackson.core.JsonProcessingException;

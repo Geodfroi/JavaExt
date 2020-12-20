@@ -1,29 +1,8 @@
 package ch.azure.aurore.strings;
 
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 public class Strings {
 
-    public static String toFirstLower(String str){
-        char[] c = str.toCharArray();
-        c[0] = Character.toLowerCase(c[0]);
-        return new String(c);
-    }
-
-    public static String toFirstUpper(String str){
-
-        char[] c = str.toCharArray();
-        c[0] = Character.toUpperCase(c[0]);
-        return new String(c);
-    }
-
-    public static boolean isNullOrEmpty(String str){
-        return str == null || str.isEmpty() || str.isBlank();
-    }
+    public static final String DEFAULT_SEPARATOR = ",";
 
     public static String camel(String str){
         if (isNullOrEmpty(str))
@@ -55,58 +34,21 @@ public class Strings {
         return sb.toString();
     }
 
-    public static String toString(Stream<?> stream) {
-        return toString(stream, ", ");
-    }
-    public static String toString(Collection<?> st) {
-        return toString(st, ", ");
+    public static boolean isNullOrEmpty(String str){
+        return str == null || str.isEmpty() || str.isBlank();
     }
 
-    public static String toString(Stream<?> stream, String separator) {
-        List<?> list = stream.collect(Collectors.toList());
-        return toString(list, separator);
+    public static String toFirstLower(String str){
+        char[] c = str.toCharArray();
+        c[0] = Character.toLowerCase(c[0]);
+        return new String(c);
     }
 
-    public static <T> String toString(Stream<T> stream, Comparator<T> comparator) {
-        return toString(stream, comparator, ", ");
-    }
+    public static String toFirstUpper(String str){
 
-    public static <T> String toString(Stream<T> stream, Comparator<T> comparator, String separator) {
-        return toString(stream.sorted(comparator), separator);
-    }
-
-    public static String toString(Collection<?> list, String separator) {
-
-        if (list == null)
-            return "";
-
-        StringBuilder str = new StringBuilder();
-        boolean hasFormerItem = false;
-
-        for (var item:list) {
-            if (item == null)
-                continue;
-            if (item instanceof String){
-                String s = (String)item;
-                if (s.isEmpty() || s.isBlank())
-                    continue;
-            }
-            if (hasFormerItem){
-                str.append(separator);
-            }
-            str.append(item.toString());
-            hasFormerItem = true;
-        }
-
-        return  str.toString();
-    }
-
-    public static <T> String toString(Collection<T> list, Comparator<T> comparator) {
-        return toString(list.stream().sorted(comparator));
-    }
-
-    public static <T> String toString(Collection<T> list, Comparator<T> comparator, String separator) {
-        return toString(list.stream().sorted(comparator), separator);
+        char[] c = str.toCharArray();
+        c[0] = Character.toUpperCase(c[0]);
+        return new String(c);
     }
 
     public static String unCamel(String str){

@@ -1,10 +1,8 @@
-package ch.azure.aurore.IO.jsonFiles;
+package ch.azure.aurore.json.jsonFiles;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 
 public class JSONFile extends ReadOnlyJSONFile {

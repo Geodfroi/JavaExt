@@ -1,6 +1,6 @@
 package ch.azure.aurore.IO.API;
 
-import ch.azure.aurore.IO.jsonFiles.JSONFile;
+import ch.azure.aurore.json.jsonFiles.JSONFile;
 
 import java.nio.file.Path;
 

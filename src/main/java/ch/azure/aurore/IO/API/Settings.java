@@ -1,6 +1,6 @@
 package ch.azure.aurore.IO.API;
 
-import ch.azure.aurore.IO.SimpleJSON;
+import ch.azure.aurore.json.SimpleJSON;
 import ch.azure.aurore.IO.exceptions.MissingSettingException;
 
 import java.util.List;

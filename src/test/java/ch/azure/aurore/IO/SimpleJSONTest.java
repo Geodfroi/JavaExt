@@ -1,6 +1,7 @@
 package ch.azure.aurore.IO;
 
-import ch.azure.aurore.strings.Strings;
+import ch.azure.aurore.conversions.Conversions;
+import ch.azure.aurore.json.SimpleJSON;
 import org.junit.jupiter.api.Assertions;
 
 import java.util.*;
@@ -35,7 +36,7 @@ class SimpleJSONTest {
     void getDoubles() {
         String propertyName = "count";
         List<Double> list = new ArrayList<>(Arrays.asList(1.0,1.1,1.2,1.3));
-        String txt = "{\r\n  \"" + propertyName + "\" : [ " + Strings.toString(list, ", ") + " ]\r\n}";
+        String txt = "{\r\n  \"" + propertyName + "\" : [ " + Conversions.toString(list, ", ") + " ]\r\n}";
         Optional<List<Double>> resultList = jsonFile.getDoubles(propertyName, txt);
         assert resultList.isPresent() && list.equals(resultList.get());
     }
@@ -54,7 +55,7 @@ class SimpleJSONTest {
     void getInts() {
         String propertyName = "count";
         List<Integer> list = new ArrayList<>(Arrays.asList(1,2,3,4));
-        String txt = "{\r\n  \"" + propertyName + "\" : [ " + Strings.toString(list, ", ") + " ]\r\n}";
+        String txt = "{\r\n  \"" + propertyName + "\" : [ " + Conversions.toString(list, ", ") + " ]\r\n}";
         Optional<List<Integer>> resultList = jsonFile.getInts(propertyName, txt);
         assert resultList.isPresent() && list.equals(resultList.get());
     }
@@ -179,7 +180,7 @@ class SimpleJSONTest {
     void getStrings() {
         String propertyName = "days";
         List<String> list = new ArrayList<>(Arrays.asList("monday","wednesday","friday"));
-        String txt = "{\r\n  \"" + propertyName + "\" : [ \"" + Strings.toString(list, "\", \"") + "\" ]\r\n}";
+        String txt = "{\r\n  \"" + propertyName + "\" : [ \"" + Conversions.toString(list, "\", \"") + "\" ]\r\n}";
         System.out.println(txt);
         Optional<List<String>> resultList= jsonFile.getStrings(propertyName, txt);
         assert (resultList.isPresent() && list.equals(resultList.get()));
@@ -233,7 +234,7 @@ class SimpleJSONTest {
     void setDoubles() {
         String propertyName = "numbers";
         double[] list = new double[]{25.2, 8.9, 42.23};
-        String expected = "{\r\n  \"" + propertyName + "\" : [ " + Strings.toString(Collections.singleton(list), ", ") + " ]\r\n}";
+        String expected = "{\r\n  \"" + propertyName + "\" : [ " + Conversions.toString(Collections.singleton(list), ", ") + " ]\r\n}";
         Optional<String> result = jsonFile.setDoubles(propertyName, list, EMPTY_TEXT);
         assert (result.isPresent() && result.get().equals(expected));
     }
@@ -252,7 +253,7 @@ class SimpleJSONTest {
     void setInts() {
         String propertyName = "numbers";
         int[] list = new int[]{4,25,8};
-        String expected = "{\r\n  \"" + propertyName + "\" : [ " + Strings.toString(Collections.singleton(list), ", ") + " ]\r\n}";
+        String expected = "{\r\n  \"" + propertyName + "\" : [ " + Conversions.toString(Collections.singleton(list), ", ") + " ]\r\n}";
         Optional<String> result = jsonFile.setInts(propertyName, list, EMPTY_TEXT);
         assert (result.isPresent() && result.get().equals(expected));
     }
@@ -349,7 +350,7 @@ class SimpleJSONTest {
     void setStrings() {
         String propertyName = "days";
         String[] list = new String[]{"monday","wednesday","friday"};
-        String expected = "{\r\n  \"" + propertyName + "\" : [ \"" + Strings.toString(Arrays.stream(list), "\", \"") + "\" ]\r\n}";
+        String expected = "{\r\n  \"" + propertyName + "\" : [ \"" + Conversions.toString(Arrays.stream(list), "\", \"") + "\" ]\r\n}";
         Optional<String> result = jsonFile.setStrings(propertyName, list, EMPTY_TEXT);
         assert (result.isPresent() && result.get().equals(expected));
     }
