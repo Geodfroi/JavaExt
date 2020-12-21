@@ -11,13 +11,9 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class FieldData {
 
@@ -49,14 +45,12 @@ public class FieldData {
     private final Field field;
     private final Method getMethod;
     private final Method setMethod;
-
     private Relationship relationship = Relationship.NONE;
     private String SQLType = "TEXT";
     private String columnName;
     private boolean convertToJSON;
     private Field relationFieldID;
     private Class<?> internalType;
-
     public FieldData(Field field, Method getMethod, Method setMethod) {
         this.field = field;
         this.getMethod = getMethod;
@@ -135,104 +129,126 @@ public class FieldData {
         return false;
     }
 
-    public void setContentInDatabase(PreparedStatement statement, int i, Object data) throws SQLException {
+    public void setCollectionValue(List<Object> collection, Object data) {
 
-        Object val = null;
+        if (field.getType().isArray()) {
+            Object array = Array.newInstance(internalType, collection.size());
+            for (int n = 0; n < collection.size(); n++) {
+                Array.set(array, n, collection.get(n));
+            }
+            try {
+                setMethod.invoke(data, array);
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                e.printStackTrace();
+                throw new IllegalStateException("can't set collection in array field");
+            }
+        } else if (Collection.class.isAssignableFrom(field.getType())) {
+            try {
+                setMethod.invoke(data, collection);
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                e.printStackTrace();
+                throw new IllegalStateException("can't set collection in list field");
+            }
+        }
+    }
 
-        try {
-            val = getMethod.invoke(data);
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            e.printStackTrace();
+    public InsertData prepareInsert(int i, Object data, InsertOperation insertOperation) {
+
+        Object val = getValue(data);
+        if (val == null)
+            return new InsertField(this, i, null, "setObject");
+
+        if (convertToJSON)
+            return new InsertField(this, i, JSON.toJSON(val), "setString");
+
+        if (relationship == Relationship.NONE) {
+            switch (SQLType) {
+                case "BLOB":
+                    return new InsertField(this, i, val, "setBytes");
+                case "INTEGER":
+                    return new InsertField(this, i, val, "setInt");
+                case "TEXT":
+                    return new InsertField(this, i, val, "setString");
+                default:
+                    break;
+            }
+            throw new IllegalStateException("Can't insert value in database for [" + SQLType + "] SQL type in [setStatement] method");
         }
 
-        if (val == null) {
-            statement.setObject(i, null);
-            return;
-        }
-
-        if (convertToJSON) {
-            statement.setString(i, JSON.toJSON(val));
-            return;
-        }
+        if (insertOperation == InsertOperation.INSERT_FOR_UPDATE)
+            return new UpdateReference(this, i);
 
         switch (relationship) {
-            case NONE:
-
-                switch (SQLType) {
-                    case "BLOB":
-                        statement.setBytes(i, (byte[]) val);
-                        break;
-                    case "INTEGER":
-                        statement.setInt(i, (int) val);
-                        break;
-                    case "TEXT":
-                        statement.setString(i, (String) val);
-                        break;
-                    default:
-                        throw new IllegalStateException("Can't insert value in database for [" + SQLType + "] SQL type in [setStatement] method");
-                }
-
-                return;
-
             case ONE_TO_ONE:
-                int linkID = 0;
-                try {
-                    linkID = (int) relationFieldID.get(val);
-                } catch (IllegalAccessException e) {
-                    e.printStackTrace();
-                }
-
-                if (linkID == 0)
-                    System.out.println("[" + relationFieldID.getDeclaringClass() + "] id was not initialised when referenced by [" + field.getDeclaringClass() + "] in database");
-                DatabaseRef r = new DatabaseRef(linkID, relationFieldID.getDeclaringClass().getSimpleName());
-                statement.setString(i, JSON.toJSON(r));
-                return;
+                int linkID = getRelationId(val);
+                if (linkID != 0) {
+                    String str = getReferenceStr(linkID);
+                    return new InsertField(this, i, str, "setString");
+                } else
+                    return new InsertReference(this, i);
 
             case ONE_TO_MANY:
-                Map<Integer, String> map = new HashMap<>();
-                if (Collection.class.isAssignableFrom(val.getClass())) {
-                    //noinspection rawtypes
-                    for (Object obj : (Iterable) val) {
-                        int id = 0;
-                        try {
-                            id = (int) relationFieldID.get(obj);
-                        } catch (IllegalAccessException e) {
-                            e.printStackTrace();
-                        }
-                        if (id != 0){
-                            map.put(id, obj.getClass().getName());
-                        }
+                IDsResult r = getRelationIDs(val);
+                if (r.getMap().size() == 0)
+                    return new InsertField(this, i, null, "setObject");
+                if (r.AreAllIDsSet())
+                    return new InsertField(this, i, JSON.toJSON(r.getMap()), "setString");
 
-                    }
-                } else if (val.getClass().isArray()) {
-                    for (int n = 0; n < Array.getLength(val); n++) {
-                        Object item = Array.get(val, n);
-                        int id = 0;
-                        try {
-                            id = (int) relationFieldID.get(item);
-                        } catch (IllegalAccessException e) {
-                            e.printStackTrace();
-                        }
-                        if (id != 0) map.put(id, item.getClass().getName());
-                    }
-                }
-
-//                List<DatabaseRef> rf = ints.stream().
-//                        map(integer -> new DatabaseRef(integer, relationFieldID.getDeclaringClass().getSimpleName())).
-//                        collect(Collectors.toList());
-
-                statement.setString(i, JSON.toJSON(map));
+                return new InsertReference(this, i);
+            default:
+                throw new IllegalStateException("Unexpected value: " + relationship);
         }
     }
 
-    @Override
-    public String toString() {
-        return "FieldData{" +
-                "columnName='" + columnName + '\'' +
-                '}';
+    IDsResult getRelationIDs(Object val) {
+        Map<Integer, String> map = new HashMap<>();
+        boolean hasZero = false;
+
+        for (var item:Generics.getCollectionFromField(val)) {
+            int id = getRelationId(item);
+            map.put(id, item.getClass().getName());
+            if (id == 0)
+                hasZero = true;
+        }
+
+        return new IDsResult(hasZero, map);
     }
 
-    public void NEWSetValueToData(ResultSet resultSet, int i, Object data) throws SQLException {
+    public int getRelationId(Object fieldValue) {
+        int linkID = 0;
+        try {
+            linkID = (int) relationFieldID.get(fieldValue);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return linkID;
+    }
+
+    public String getReferenceStr(int id) {
+        DatabaseRef r = new DatabaseRef(id, relationFieldID.getDeclaringClass().getSimpleName());
+        return JSON.toJSON(r);
+    }
+
+    public Object getValue(Object data) {
+        try {
+            return getMethod.invoke(data);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            System.out.println("Failed to get value from field [" + field.getName() + "] for class [" + field.getDeclaringClass().getSimpleName() + "]");
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public void setValue(Object obj, Object val) {
+        try {
+            setMethod.invoke(obj, val);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            System.out.println("Failed to set field [" + field.getName() + "] for class [" + field.getDeclaringClass().getSimpleName() + "]");
+            e.printStackTrace();
+        }
+    }
+
+    public void setValueToData(ResultSet resultSet, int i, Object data) throws SQLException {
 
         if (relationship != Relationship.NONE)
             return;
@@ -259,7 +275,7 @@ public class FieldData {
         }
 
         setValue(data, val);
-
+    }
 
 //    public static Object getContent(ResultSet resultSet, FieldData fieldData, int index) throws SQLException {
 //        throw new RuntimeException();
@@ -300,38 +316,36 @@ public class FieldData {
 //                            hierarchyClassFieldIds.put(md.getColumnName(n), classID);
 //                            break;
 //                    }
+
+
+    @Override
+    public String toString() {
+        return "FieldData{" +
+                "columnName='" + columnName + '\'' +
+                '}';
     }
 
-    public void setValue(Object obj, Object val) {
-        try {
-            setMethod.invoke(obj, val);
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            System.out.println("Failed to set field [" + field.getName() + "] for class [" + field.getDeclaringClass().getSimpleName() + "]");
-            e.printStackTrace();
-        }
+    public enum InsertOperation {
+        INSERT_FOR_NEW_ENTRY,
+        INSERT_FOR_UPDATE,
+    }
+}
+
+class IDsResult {
+
+    private final boolean hasZero;
+    private final Map<Integer, String> map;
+
+    public IDsResult(boolean hasZero, Map<Integer, String> map) {
+        this.hasZero = hasZero;
+        this.map = map;
     }
 
-    public void setCollectionValue(List<Object> collection, Object data) {
+    public boolean AreAllIDsSet() {
+        return !hasZero;
+    }
 
-        if (field.getType().isArray()){
-            Object array = Array.newInstance(internalType, collection.size());
-            for (int n = 0; n < collection.size(); n++) {
-                Array.set(array, n, collection.get(n));
-            }
-            try {
-                setMethod.invoke(data, array);
-            } catch (IllegalAccessException | InvocationTargetException e) {
-                e.printStackTrace();
-                throw new IllegalStateException("can't set collection in array field");
-            }
-        }
-        else if (Collection.class.isAssignableFrom(field.getType())){
-            try {
-                setMethod.invoke(data, collection);
-            } catch (IllegalAccessException | InvocationTargetException e) {
-                e.printStackTrace();
-                throw new IllegalStateException("can't set collection in list field");
-            }
-        }
+    public Map<Integer, String> getMap() {
+        return map;
     }
 }

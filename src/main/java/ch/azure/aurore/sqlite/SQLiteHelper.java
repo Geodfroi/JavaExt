@@ -27,7 +27,7 @@ public class SQLiteHelper {
         //  DatabaseMetaDataWrapper m = getMetadata();
         boolean modified = false;
 
-        for (var e : fieldsData.getFields()) {
+        for (FieldData e : fieldsData.getFields()) {
 
             String type = e.getSQLType();
 
@@ -108,7 +108,7 @@ public class SQLiteHelper {
     }
 
     public static void insertColumn(Connection conn, String className, String name, String type) {
-
+        throw new IllegalStateException("insertColumn");
     }
 
     //region compose statements
@@ -138,7 +138,6 @@ public class SQLiteHelper {
     }
 
     public static String composeInsertStatement(FieldsData fieldsData) {
-
         StringBuilder str = new StringBuilder().
                 append("INSERT INTO ").
                 append(fieldsData.getClassName()).
@@ -171,6 +170,25 @@ public class SQLiteHelper {
         System.out.println(str);
         return str;
     }
+
+    public static String composeUpdateStatement(FieldsData fieldsData) {
+        StringBuilder str = new StringBuilder().
+                append("UPDATE ").
+                append(fieldsData.getClassName()).
+                append(" SET ");
+
+        var count = 0;
+        for (var e : fieldsData.getFields()) {
+            str.append(e.getColumnName());
+            if (count++ < fieldsData.getFields().size() - 1) {
+                str.append(" = ?, ");
+            }
+        }
+
+        str.append(" = ? WHERE _id = ?");
+        System.out.println("SQL: " + str.toString());
+        return str.toString();
+    }
     //endregion
 }
 
@@ -186,21 +204,3 @@ public class SQLiteHelper {
 //        return str;
 //    }
 //
-//    public static String composeUpdateStatement(FieldsData fieldsData) {
-//        StringBuilder str = new StringBuilder().
-//                append("UPDATE ").
-//                append(fieldsData.getClassName()).
-//                append(" SET ");
-//        List<String> fields = fieldsData.getFieldNames(FieldCategory.primitiveType);
-//        fields.addAll(fieldsData.getFieldNames(FieldCategory.hierarchyClass));
-//
-//        for (int n = 0; n < fields.size(); n++) {
-//            str.append(fields.get(n));
-//            if (n < fields.size() -1 )
-//                str.append(" = ?, ");
-//        }
-//
-//        str.append(" = ? WHERE _id = ?");
-//        System.out.println("SQL: " + str.toString());
-//        return str.toString();
-//    }

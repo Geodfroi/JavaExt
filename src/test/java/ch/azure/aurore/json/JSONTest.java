@@ -9,7 +9,6 @@ import java.util.ArrayList;
 
 class JSONTest {
 
-
     @Test
     void toJSON_list() {
         ArrayList<Integer> list = new ArrayList<>();

@@ -34,7 +34,7 @@ public class FieldsData {
 
     public FieldsData(Class<?> aClass) {
         if (!aClass.isAnnotationPresent(DatabaseClass.class)) {
-            throw new RuntimeException("Class [" + aClass.getSimpleName() + "] must have [DatabaseClass] annotation to be imported into database");
+            throw new IllegalStateException("Class [" + aClass.getSimpleName() + "] must have [DatabaseClass] annotation to be imported into database");
         }
         this.className = FieldsData.getClassDBName(aClass);
 
