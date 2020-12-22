@@ -15,7 +15,10 @@ public class InsertReference extends InsertData{
     }
 
     @Override
-    public void execute(PreparedStatement statement, Object data) throws SQLException {
+    public void execute(PreparedStatement statement, Object data, boolean isModified) throws SQLException {
+        if (!isModified)
+            return;
+
         if (getFieldData().getRelationship() == Relationship.ONE_TO_ONE){
             String str = getFieldData().getReferenceStr(id);
             statement.setString(getIndex(), str);

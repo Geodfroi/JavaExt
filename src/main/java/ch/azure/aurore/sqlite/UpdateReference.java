@@ -17,7 +17,10 @@ public class UpdateReference extends InsertData {
     }
 
     @Override
-    public void execute(PreparedStatement statement, Object data) throws SQLException {
+    public void execute(PreparedStatement statement, Object data, boolean isModified) throws SQLException {
+        if (!isModified)
+            return;
+
         Object value = getFieldData().getValue(data);
         if (getFieldData().getRelationship() == Relationship.ONE_TO_ONE) {
             int id = getFieldData().getRelationId(value);

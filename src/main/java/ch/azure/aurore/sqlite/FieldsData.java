@@ -1,22 +1,17 @@
 package ch.azure.aurore.sqlite;
 
-import ch.azure.aurore.reflection.AccessorInfo;
-import ch.azure.aurore.reflection.MutatorInfo;
+import ch.azure.aurore.reflection.ClassInfo;
+import ch.azure.aurore.reflection.FieldInfo;
+import ch.azure.aurore.reflection.MethodInfo;
 import ch.azure.aurore.reflection.Reflection;
-import ch.azure.aurore.sqlite.wrapper.annotations.*;
+import ch.azure.aurore.sqlite.wrapper.annotations.DBPack;
+import ch.azure.aurore.sqlite.wrapper.annotations.DBUnpack;
+import ch.azure.aurore.sqlite.wrapper.annotations.DatabaseClass;
+import ch.azure.aurore.sqlite.wrapper.annotations.PrimaryKey;
 import ch.azure.aurore.strings.Strings;
-import org.apache.commons.collections4.map.CaseInsensitiveMap;
-import org.apache.commons.lang3.reflect.ConstructorUtils;
-import org.apache.commons.lang3.reflect.FieldUtils;
-import org.apache.commons.lang3.reflect.MethodUtils;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * https://www.baeldung.com/java-custom-annotation
@@ -24,81 +19,65 @@ import java.util.Map;
  */
 public class FieldsData {
 
+    public static final String MODIFIER_ACCESSOR = "isModified";
     private final String className;
     private final List<FieldData> fields = new ArrayList<>();
-    private Method unpackMethod;
-    private Method packMethod;
-
-    private Method idAccessor;
-    private Method idMutator;
+    private FieldInfo idField;
+    private final MethodInfo unpackMethod;
+    private final MethodInfo packMethod;
+    private final MethodInfo isModifiedAccessor;
 
     public FieldsData(Class<?> aClass) {
         if (!aClass.isAnnotationPresent(DatabaseClass.class)) {
             throw new IllegalStateException("Class [" + aClass.getSimpleName() + "] must have [DatabaseClass] annotation to be imported into database");
         }
+        ClassInfo classInfo = Reflection.getInfo(aClass);
+
         this.className = FieldsData.getClassDBName(aClass);
 
-        Constructor<?> c = ConstructorUtils.getAccessibleConstructor(aClass);
-        if (c == null) {
+        if (!classInfo.hasAccessibleConstructor())
             throw new RuntimeException("Class [" + aClass.getSimpleName() + "] does not contains a public parameterless constructor");
-        }
 
-        Map<String, Method> accessors = new CaseInsensitiveMap<>();
-        Map<String, Method> mutators = new CaseInsensitiveMap<>();
-        for (Method m : aClass.getDeclaredMethods()) {
-            AccessorInfo info = Reflection.isGetter(m);
-            if (info.isGetter())
-                accessors.put(info.getBackingField(), m);
-            else {
-                MutatorInfo mInfo = Reflection.isSetter(m);
-                if (mInfo.isSetter())
-                    mutators.put(mInfo.getBackingField(), m);
+        for (FieldInfo f : classInfo.getFields())
+        {
+            if (f.isAnnotationPresent(PrimaryKey.class))
+                idField = f;
+            else{
+                if (f.hasAccessor() && f.hasMutator())
+                    fields.add(new FieldData(f));
             }
         }
 
-        for (Field field : FieldUtils.getAllFieldsList(aClass)) {
-            if (field.isAnnotationPresent(PrimaryKey.class)) {
-                idAccessor = accessors.get(field.getName());
-                idMutator = mutators.get(field.getName());
-            } else if (!field.isAnnotationPresent(DatabaseIgnore.class)) {
-                if (accessors.containsKey(field.getName()) && mutators.containsKey(field.getName()))
-                    fields.add(new FieldData(field, accessors.get(field.getName()), mutators.get(field.getName())));
-            }
-        }
+        isModifiedAccessor = classInfo.getMethod(MODIFIER_ACCESSOR);
 
-        Method[] array = MethodUtils.getMethodsWithAnnotation(aClass, DBPack.class);
-        if (array.length > 0) {
-            packMethod = array[0];
-        }
-        array = MethodUtils.getMethodsWithAnnotation(aClass, DBUnpack.class);
-        if (array.length > 0)
-            unpackMethod = array[0];
+        if (idField == null)
+            throw new IllegalStateException("Class [" + aClass.getSimpleName() + "] does not contains a [id] primary key field with public accessor and mutator");
+        if (isModifiedAccessor == null)
+            throw new IllegalStateException("Class [" + aClass.getSimpleName() + "] does not contains a public [isModified] accessor method ");
 
-        if (idAccessor == null || idMutator == null)
-            throw new RuntimeException("Class [" + aClass.getSimpleName() + "] does not contains a [id] primary key field with public accessor and mutator");
+        unpackMethod = classInfo.getMethodWith(DBPack.class);
+        packMethod = classInfo.getMethodWith(DBUnpack.class);
 
         this.fields.sort((o1, o2) -> o1.getColumnName().compareToIgnoreCase(o2.getColumnName()));
     }
-
-    //region accessors
-    public String getClassName() {
-        return className;
-    }
-
-    public List<FieldData> getFields() {
-        return fields;
-    }
-
-
-//endregion
 
     public static String getClassDBName(Class<?> aClass) {
         DatabaseClass annotation = aClass.getAnnotation(DatabaseClass.class);
         return Strings.isNullOrEmpty(annotation.dbName()) ? aClass.getSimpleName() : annotation.dbName();
     }
 
+    //region accessors
+    public String getClassName() {
+        return className;
+    }
+    //endregion
+
+    public List<FieldData> getFields() {
+        return fields;
+    }
+
     public FieldData getField(String columnName) {
-        for (var f : fields) {
+        for (FieldData f : fields) {
             if (f.getColumnName().equals(columnName))
                 return f;
         }
@@ -106,32 +85,20 @@ public class FieldsData {
     }
 
     public int getID(Object data) {
-        try {
-            return (int) idAccessor.invoke(data);
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            e.printStackTrace();
-            throw new IllegalStateException("Unable to get [" + data.toString() + "] id");
-        }
+        return (int) idField.getAccessor().invoke(data);
+    }
+
+    public boolean isModified(Object data) {
+        return (Boolean) isModifiedAccessor.invoke(data);
     }
 
     public void pack(Object data) {
-        if (packMethod != null) {
-            try {
-                packMethod.invoke(data);
-            } catch (ReflectiveOperationException e) {
-                e.printStackTrace();
-                System.out.println("Failure to invoke [" + packMethod.getName() + "] pack method in [" + className + "]");
-            }
-        }
+        if (packMethod != null)
+            packMethod.invoke(data);
     }
 
     public void setID(Object data, int id) {
-        try {
-            idMutator.invoke(data, id);
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Unable to set [" + data.toString() + "] id");
-        }
+        idField.getMutator().invoke(data, id);
     }
 
     @Override
@@ -142,15 +109,11 @@ public class FieldsData {
     }
 
     public void unpack(Object data) {
-        if (unpackMethod != null) {
-            try {
-                unpackMethod.invoke(data);
-            } catch (ReflectiveOperationException e) {
-                e.printStackTrace();
-                System.out.println("Failure to invoke [" + unpackMethod.getName() + "] unpack method in [" + className + "]");
-            }
-        }
+        if (unpackMethod != null)
+            unpackMethod.invoke(data);
     }
+}
+
 //    @Deprecated
 //    public Map<String, Field> getPrimitiveTypeFields() {
 //        return primitiveTypeFields;
@@ -309,7 +272,7 @@ public class FieldsData {
 //        }
 //        throw new RuntimeException("Invalid [" + category.toString() + "] category");
 //    }
-}
+
 
 //    public ClassSQLData(Class<?> aClass) {
 //

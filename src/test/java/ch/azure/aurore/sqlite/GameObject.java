@@ -4,6 +4,7 @@ import ch.azure.aurore.sqlite.wrapper.annotations.DatabaseClass;
 import ch.azure.aurore.sqlite.wrapper.annotations.PrimaryKey;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @DatabaseClass
@@ -11,6 +12,10 @@ public class GameObject {
     @PrimaryKey
     private int _id;
     private String name;
+    private boolean _modified = true;
+    private double[] pos = new double[0];
+
+    private byte[] image;
 
     private Transform tr = new Transform();
 
@@ -21,22 +26,29 @@ public class GameObject {
     private Attack[] attacks;
 
     public Attack[] getAttacks() {
-        return attacks;
+        if (attacks == null)
+            return null;
+
+        return Arrays.copyOf(attacks, attacks.length);
     }
 
-    public void setAttacks(Attack[] attacks) {
-        this.attacks = attacks;
+    public byte[] getImage() {
+        return image;
     }
 
     public List<Enemy> getEnemies() {
         return enemies;
     }
 
-    public void setEnemies(List<Enemy> enemies) {
-        this.enemies = enemies;
+    public void setImage(byte[] image) {
+        this.image = image;
+        _modified = true;
     }
 
-    private double[] pos = new double[0];
+    public void setAttacks(Attack[] attacks) {
+        this.attacks = attacks;
+        _modified = true;
+    }
 
     public double[] getPos() {
         return pos;
@@ -70,6 +82,7 @@ public class GameObject {
 
     public void setTr(Transform tr) {
         this.tr = tr;
+        _modified = true;
     }
 
     public List<String> getTags() {
@@ -78,6 +91,7 @@ public class GameObject {
 
     public void setTags(List<String> tags) {
         this.tags = tags;
+        _modified = true;
     }
 
     public World getWorld() {
@@ -86,5 +100,10 @@ public class GameObject {
 
     public void setWorld(World world) {
         this.world = world;
+        _modified = true;
+    }
+
+    public boolean isModified() {
+        return _modified;
     }
 }

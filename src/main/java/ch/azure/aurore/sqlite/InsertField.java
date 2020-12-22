@@ -15,8 +15,14 @@ public class InsertField extends InsertData {
     }
 
     @Override
-    public void execute(PreparedStatement statement, Object data) throws SQLException {
+    public void execute(PreparedStatement statement, Object data, boolean isModified) throws SQLException {
+        if (!isModified)
+            return;
+
         switch (setMethod){
+            case "setBytes":
+                statement.setBytes(getIndex(), (byte[])value);
+                break;
             case "setObject":
                 statement.setObject(getIndex(), value);
                 break;

@@ -2,6 +2,7 @@ package ch.azure.aurore.sqlite;
 
 import ch.azure.aurore.generics.Generics;
 import ch.azure.aurore.json.JSON;
+import ch.azure.aurore.reflection.FieldInfo;
 import ch.azure.aurore.sqlite.wrapper.annotations.DatabaseClass;
 import ch.azure.aurore.sqlite.wrapper.annotations.DatabaseName;
 import ch.azure.aurore.sqlite.wrapper.annotations.PrimaryKey;
@@ -9,11 +10,12 @@ import ch.azure.aurore.strings.Strings;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class FieldData {
 
@@ -42,27 +44,20 @@ public class FieldData {
         fieldTypeToSQL.put(String.class, "TEXT");
     }
 
-    private final Field field;
-    private final Method getMethod;
-    private final Method setMethod;
+    private final FieldInfo f;
     private Relationship relationship = Relationship.NONE;
     private String SQLType = "TEXT";
     private String columnName;
     private boolean convertToJSON;
     private Field relationFieldID;
     private Class<?> internalType;
-    public FieldData(Field field, Method getMethod, Method setMethod) {
-        this.field = field;
-        this.getMethod = getMethod;
-        this.setMethod = setMethod;
 
-        if (field.isAnnotationPresent(DatabaseName.class)) {
-            DatabaseName fieldAnnotation = field.getAnnotation(DatabaseName.class);
-            this.columnName = Strings.isNullOrEmpty(fieldAnnotation.value()) ? field.getName() : fieldAnnotation.value();
-        } else
-            this.columnName = field.getName();
+    public FieldData(FieldInfo f) {
+        this.f = f;
+        DatabaseName fieldAnnotation = f.getAnnotationIfPresent(DatabaseName.class);
+        this.columnName = fieldAnnotation == null ? f.getName() : (Strings.isNullOrEmpty(fieldAnnotation.value()) ? f.getName() : fieldAnnotation.value());
 
-        Class<?> fieldType = field.getType();
+        Class<?> fieldType = f.getType();
 
         if (fieldTypeToSQL.containsKey(fieldType)) {
             SQLType = fieldTypeToSQL.get(fieldType);
@@ -77,7 +72,7 @@ public class FieldData {
         }
 
         if (fieldType.isArray() || Collection.class.isAssignableFrom(fieldType))
-            if (checkIfInternalData(Generics.getComponentType(field)))
+            if (checkIfInternalData(f.getComponentType()))
                 return;
 
         // not relational custom class
@@ -90,8 +85,7 @@ public class FieldData {
 
                 if (!f.getType().equals(int.class))
                     throw new RuntimeException("Primary key field [" + f.getName() + "] in [" + aClass.getSimpleName() + "] must be integer field");
-
-                f.setAccessible(true);
+//                f.setAccessible(true);
                 return f;
             }
         }
@@ -103,8 +97,8 @@ public class FieldData {
         return columnName;
     }
 
-    public Field getField() {
-        return field;
+    public String getName() {
+        return f.getName();
     }
 
     public Relationship getRelationship() {
@@ -115,6 +109,9 @@ public class FieldData {
         return SQLType;
     }
 
+    public Class<?> getType() {
+        return f.getType();
+    }
     //endregion
 
     private boolean checkIfInternalData(Class<?> internalType) {
@@ -129,27 +126,37 @@ public class FieldData {
         return false;
     }
 
-    public void setCollectionValue(List<Object> collection, Object data) {
-
-        if (field.getType().isArray()) {
-            Object array = Array.newInstance(internalType, collection.size());
-            for (int n = 0; n < collection.size(); n++) {
-                Array.set(array, n, collection.get(n));
-            }
-            try {
-                setMethod.invoke(data, array);
-            } catch (IllegalAccessException | InvocationTargetException e) {
-                e.printStackTrace();
-                throw new IllegalStateException("can't set collection in array field");
-            }
-        } else if (Collection.class.isAssignableFrom(field.getType())) {
-            try {
-                setMethod.invoke(data, collection);
-            } catch (IllegalAccessException | InvocationTargetException e) {
-                e.printStackTrace();
-                throw new IllegalStateException("can't set collection in list field");
-            }
+    public int getRelationId(Object fieldValue) {
+        int linkID = 0;
+        try {
+            linkID = (int) relationFieldID.get(fieldValue);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
         }
+        return linkID;
+    }
+
+    IDsResult getRelationIDs(Object val) {
+        Map<Integer, String> map = new HashMap<>();
+        boolean hasZero = false;
+
+        for (var item : Generics.getCollectionFromField(val)) {
+            int id = getRelationId(item);
+            map.put(id, item.getClass().getName());
+            if (id == 0)
+                hasZero = true;
+        }
+
+        return new IDsResult(hasZero, map);
+    }
+
+    public String getReferenceStr(int id) {
+        DatabaseRef r = new DatabaseRef(id, relationFieldID.getDeclaringClass().getSimpleName());
+        return JSON.toJSON(r);
+    }
+
+    public Object getValue(Object data) {
+        return f.getAccessor().invoke(data);
     }
 
     public InsertData prepareInsert(int i, Object data, InsertOperation insertOperation) {
@@ -200,52 +207,20 @@ public class FieldData {
         }
     }
 
-    IDsResult getRelationIDs(Object val) {
-        Map<Integer, String> map = new HashMap<>();
-        boolean hasZero = false;
+    public void setCollectionValue(List<Object> collection, Object data) {
+        if (f.getType().isArray()) {
+            Object array = Array.newInstance(internalType, collection.size());
+            for (int n = 0; n < collection.size(); n++) {
+                Array.set(array, n, collection.get(n));
+            }
+            f.getMutator().invoke(data, array);
 
-        for (var item:Generics.getCollectionFromField(val)) {
-            int id = getRelationId(item);
-            map.put(id, item.getClass().getName());
-            if (id == 0)
-                hasZero = true;
-        }
-
-        return new IDsResult(hasZero, map);
-    }
-
-    public int getRelationId(Object fieldValue) {
-        int linkID = 0;
-        try {
-            linkID = (int) relationFieldID.get(fieldValue);
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        }
-        return linkID;
-    }
-
-    public String getReferenceStr(int id) {
-        DatabaseRef r = new DatabaseRef(id, relationFieldID.getDeclaringClass().getSimpleName());
-        return JSON.toJSON(r);
-    }
-
-    public Object getValue(Object data) {
-        try {
-            return getMethod.invoke(data);
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            System.out.println("Failed to get value from field [" + field.getName() + "] for class [" + field.getDeclaringClass().getSimpleName() + "]");
-            e.printStackTrace();
-        }
-        return null;
+        } else if (Collection.class.isAssignableFrom(f.getType()))
+            f.getMutator().invoke(data, collection);
     }
 
     public void setValue(Object obj, Object val) {
-        try {
-            setMethod.invoke(obj, val);
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            System.out.println("Failed to set field [" + field.getName() + "] for class [" + field.getDeclaringClass().getSimpleName() + "]");
-            e.printStackTrace();
-        }
+        f.getMutator().invoke(obj, val);
     }
 
     public void setValueToData(ResultSet resultSet, int i, Object data) throws SQLException {
@@ -257,9 +232,9 @@ public class FieldData {
 
         if (convertToJSON) {
             String txt = resultSet.getString(i);
-            val = JSON.fromJSON(field.getType(), txt);
+            val = JSON.fromJSON(f.getType(), txt);
         } else {
-            switch (field.getType().getSimpleName()) {
+            switch (f.getType().getSimpleName()) {
                 case "boolean":
                     val = resultSet.getBoolean(i);
                     break;
@@ -270,12 +245,26 @@ public class FieldData {
                     val = resultSet.getString(i);
                     break;
                 default:
-                    throw new IllegalStateException("Unexpected value: " + field.getType().getSimpleName());
+                    throw new IllegalStateException("Unexpected value: " + f.getType().getSimpleName());
             }
         }
 
         setValue(data, val);
     }
+
+    @Override
+    public String toString() {
+        return "FieldData{" +
+                "columnName='" + columnName + '\'' +
+                '}';
+    }
+
+
+    public enum InsertOperation {
+        INSERT_FOR_NEW_ENTRY,
+        INSERT_FOR_UPDATE,
+    }
+
 
 //    public static Object getContent(ResultSet resultSet, FieldData fieldData, int index) throws SQLException {
 //        throw new RuntimeException();
@@ -304,8 +293,7 @@ public class FieldData {
 ////                throw new RuntimeException("Can't fetch value from database for type [" + columnType.getSimpleName() + "] in [getStatement] method");
 ////        }
 //    }
-
-        //                    switch (fieldsData.getFieldCategory(md.getColumnName(n))){
+    //                    switch (fieldsData.getFieldCategory(md.getColumnName(n))){
 //                        case primitiveType:
 //                            Class<?> type = fieldsData.getPrimitiveFieldType(md.getColumnName(n));
 //
@@ -316,19 +304,6 @@ public class FieldData {
 //                            hierarchyClassFieldIds.put(md.getColumnName(n), classID);
 //                            break;
 //                    }
-
-
-    @Override
-    public String toString() {
-        return "FieldData{" +
-                "columnName='" + columnName + '\'' +
-                '}';
-    }
-
-    public enum InsertOperation {
-        INSERT_FOR_NEW_ENTRY,
-        INSERT_FOR_UPDATE,
-    }
 }
 
 class IDsResult {

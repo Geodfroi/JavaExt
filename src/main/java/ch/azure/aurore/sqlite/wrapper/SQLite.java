@@ -19,8 +19,8 @@ public class SQLite {
     private final Map<Class<?>, PreparedStatement> idQueryStatements = new HashMap<>();
 
     private final Map<Class<?>, Map<Integer, Object>> classLoadedItems = new HashMap<>();
-    //    private final Map<Class<?>, PreparedStatement> queryAllStatements = new HashMap<>();
-    //    private final Map<Class<?>, PreparedStatement> removeStatements = new HashMap<>();
+    // private final Map<Class<?>, PreparedStatement> queryAllStatements = new HashMap<>();
+    // private final Map<Class<?>, PreparedStatement> removeStatements = new HashMap<>();
     private final Map<Class<?>, PreparedStatement> updateStatements = new HashMap<>();
 
     private final Connection conn;
@@ -116,7 +116,7 @@ public class SQLite {
     private void loadReferences(List<LoadReference> references, Object data) {
         for (LoadReference f : references) {
             if (f.isUniqueRef()) {
-                Class<?> fieldType = f.getFieldData().getField().getType();
+                Class<?> fieldType = f.getFieldData().getType();
                 int id = f.getUniqueRef().getId();
                 Object obj = fetchReferencedObject(fieldType, id);
                 putInMemory(obj, id);
@@ -190,6 +190,7 @@ public class SQLite {
         // update item with foreign keys
 
         List<InsertData> inserts = new ArrayList<>();
+
         int insertCount = 1;
         for (FieldData f : fieldsData.getFields()) {
             InsertData r = f.prepareInsert(insertCount++, data, FieldData.InsertOperation.INSERT_FOR_NEW_ENTRY);
@@ -208,7 +209,7 @@ public class SQLite {
         try {
             for (InsertData i : inserts) {
                 if (i instanceof InsertField) {
-                    i.execute(statement, data);
+                    i.execute(statement, data, true);
                 }
             }
 
@@ -240,7 +241,7 @@ public class SQLite {
                     InsertReference ref = (InsertReference) i;
                     boolean ins = ref.processRef(this, data);
                     if (!ins)
-                        System.out.println("Failure to insert [" + ref.getFieldData().getField().getName() + "] value in [" + data.getClass().getSimpleName() + "]");
+                        System.out.println("Failure to insert [" + ref.getFieldData().getName() + "] value in [" + data.getClass().getSimpleName() + "]");
                 }
             }
 
@@ -308,17 +309,17 @@ public class SQLite {
             if (i instanceof InsertReference) {
                 boolean ins = ((InsertReference) i).processRef(this, data);
                 if (!ins)
-                    System.out.println("Failure to insert [" + i.getFieldData().getField().getName() + "] value in [" + data.getClass().getSimpleName() + "]");
+                    System.out.println("Failure to insert [" + i.getFieldData().getName() + "] value in [" + data.getClass().getSimpleName() + "]");
             } else if (i instanceof UpdateReference) {
                 UpdateReference uRef = (UpdateReference) i;
                 if (uRef.getFieldData().getRelationship() == Relationship.ONE_TO_ONE) {
                     Object updateObj = uRef.getUpdateRef(data, updateTrack);
                     if (updateObj != null && !updateItem(updateObj, updateTrack))
-                            System.out.println("Failure to update [" + i.getFieldData().getField().getName() + "] value in [" + data.getClass().getSimpleName() + "]");
+                            System.out.println("Failure to update [" + i.getFieldData().getName() + "] value in [" + data.getClass().getSimpleName() + "]");
                 } else {
                     for (Object updateObj : uRef.getUpdateRefs(data, updateTrack)) {
                         if (!updateItem(updateObj, updateTrack))
-                            System.out.println("Failure to update [" + i.getFieldData().getField().getName() + "] value in [" + data.getClass().getSimpleName() + "]");
+                            System.out.println("Failure to update [" + i.getFieldData().getName() + "] value in [" + data.getClass().getSimpleName() + "]");
                     }
                 }
             }
@@ -327,8 +328,9 @@ public class SQLite {
         PreparedStatement statement = updateStatements.get(data.getClass());
 
         try {
-            for (var i : inserts) {
-                i.execute(statement, data);
+            boolean isModified = fieldsData.isModified(data);
+            for (InsertData i : inserts) {
+                i.execute(statement, data, isModified);
             }
             statement.setInt(insertCount, id);
 

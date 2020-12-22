@@ -16,7 +16,6 @@ module JavaExt {
     exports ch.azure.aurore.collections;
     exports ch.azure.aurore.strings;
     exports ch.azure.aurore.images.API;
-    exports ch.azure.aurore.tuples;
     exports ch.azure.aurore.fxml;
     exports ch.azure.aurore.sqlite.wrapper;
     exports ch.azure.aurore.sqlite.wrapper.annotations;
