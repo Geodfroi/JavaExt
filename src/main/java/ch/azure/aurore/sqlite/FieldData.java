@@ -2,24 +2,22 @@ package ch.azure.aurore.sqlite;
 
 import ch.azure.aurore.generics.Generics;
 import ch.azure.aurore.json.JSON;
+import ch.azure.aurore.reflection.ClassInfo;
 import ch.azure.aurore.reflection.FieldInfo;
+import ch.azure.aurore.reflection.Reflection;
 import ch.azure.aurore.sqlite.wrapper.annotations.DatabaseClass;
 import ch.azure.aurore.sqlite.wrapper.annotations.DatabaseName;
-import ch.azure.aurore.sqlite.wrapper.annotations.PrimaryKey;
 import ch.azure.aurore.strings.Strings;
 
 import java.lang.reflect.Array;
-import java.lang.reflect.Field;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class FieldData {
 
     private static final Map<Class<?>, String> fieldTypeToSQL = new HashMap<>();
+    private static final String ID_FIELD = "id";
 
     static {
         fieldTypeToSQL.put(boolean.class, "NUMERIC");
@@ -49,7 +47,7 @@ public class FieldData {
     private String SQLType = "TEXT";
     private String columnName;
     private boolean convertToJSON;
-    private Field relationFieldID;
+    private FieldInfo relationFieldID;
     private Class<?> internalType;
 
     public FieldData(FieldInfo f) {
@@ -57,6 +55,9 @@ public class FieldData {
         DatabaseName fieldAnnotation = f.getAnnotationIfPresent(DatabaseName.class);
         this.columnName = fieldAnnotation == null ? f.getName() : (Strings.isNullOrEmpty(fieldAnnotation.value()) ? f.getName() : fieldAnnotation.value());
 
+        if (columnName.equals("tags")){
+            System.out.println("huh");
+        }
         Class<?> fieldType = f.getType();
 
         if (fieldTypeToSQL.containsKey(fieldType)) {
@@ -71,25 +72,25 @@ public class FieldData {
             return;
         }
 
-        if (fieldType.isArray() || Collection.class.isAssignableFrom(fieldType))
-            if (checkIfInternalData(f.getComponentType()))
+        if (fieldType.isArray() || Collection.class.isAssignableFrom(fieldType)) {
+            internalType = f.getComponentType();
+            if (internalType.isAnnotationPresent(DatabaseClass.class)) {
+                SQLType = "TEXT";
+                relationship = Relationship.ONE_TO_MANY;
+                columnName += "_IDs";
+                relationFieldID = getRelationFieldID(internalType);
                 return;
-
-        // not relational custom class
-        convertToJSON = true;
-    }
-
-    private static Field getRelationFieldID(Class<?> aClass) {
-        for (Field f : aClass.getDeclaredFields()) {
-            if (f.isAnnotationPresent(PrimaryKey.class)) {
-
-                if (!f.getType().equals(int.class))
-                    throw new RuntimeException("Primary key field [" + f.getName() + "] in [" + aClass.getSimpleName() + "] must be integer field");
-//                f.setAccessible(true);
-                return f;
             }
         }
-        throw new RuntimeException("Class [" + aClass.getSimpleName() + "] marked has [DatabaseClass] must have a [Primary Key] integer field");
+        convertToJSON = true; //<- not relational custom class
+    }
+
+    private static FieldInfo getRelationFieldID(Class<?> clazz) {
+        ClassInfo classInfo = Reflection.getInfo(clazz);
+        FieldInfo f = classInfo.getField(ID_FIELD);
+        if (f != null)
+            return f;
+        throw new RuntimeException("Class [" + clazz.getSimpleName() + "] marked has [DatabaseClass] must have a [Primary Key] integer field");
     }
 
     //region accessors
@@ -105,6 +106,10 @@ public class FieldData {
         return relationship;
     }
 
+    public boolean isConvertToJSON() {
+        return convertToJSON;
+    }
+
     public String getSQLType() {
         return SQLType;
     }
@@ -112,42 +117,30 @@ public class FieldData {
     public Class<?> getType() {
         return f.getType();
     }
+
+    public Class<?> getInternalType() {
+        return internalType;
+    }
+
     //endregion
 
-    private boolean checkIfInternalData(Class<?> internalType) {
-        if (internalType.isAnnotationPresent(DatabaseClass.class)) {
-            SQLType = "TEXT";
-            relationship = Relationship.ONE_TO_MANY;
-            columnName += "_IDs";
-            relationFieldID = getRelationFieldID(internalType);
-            this.internalType = internalType;
-            return true;
-        }
-        return false;
-    }
 
     public int getRelationId(Object fieldValue) {
-        int linkID = 0;
-        try {
-            linkID = (int) relationFieldID.get(fieldValue);
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        }
-        return linkID;
+        return (int) relationFieldID.getAccessor().invoke(fieldValue);
     }
 
-    IDsResult getRelationIDs(Object val) {
-        Map<Integer, String> map = new HashMap<>();
+    IDsResult getRelationIDs(Object fieldValue) {
+        List<DatabaseRef> list = new ArrayList<>();
         boolean hasZero = false;
 
-        for (var item : Generics.getCollectionFromField(val)) {
+        for (Object item : Generics.getCollectionFromField(fieldValue)) {
             int id = getRelationId(item);
-            map.put(id, item.getClass().getName());
+            list.add(new DatabaseRef(id, item.getClass().getName()));
             if (id == 0)
                 hasZero = true;
         }
 
-        return new IDsResult(hasZero, map);
+        return new IDsResult(hasZero, list);
     }
 
     public String getReferenceStr(int id) {
@@ -155,13 +148,13 @@ public class FieldData {
         return JSON.toJSON(r);
     }
 
-    public Object getValue(Object data) {
+    public Object getFieldValue(Object data) {
         return f.getAccessor().invoke(data);
     }
 
     public InsertData prepareInsert(int i, Object data, InsertOperation insertOperation) {
 
-        Object val = getValue(data);
+        Object val = getFieldValue(data);
         if (val == null)
             return new InsertField(this, i, null, "setObject");
 
@@ -182,8 +175,8 @@ public class FieldData {
             throw new IllegalStateException("Can't insert value in database for [" + SQLType + "] SQL type in [setStatement] method");
         }
 
-        if (insertOperation == InsertOperation.INSERT_FOR_UPDATE)
-            return new UpdateReference(this, i);
+        if (insertOperation == InsertOperation.INSERT_FOR_NEW_ENTRY)
+            return new InsertField(this, i, null, "setObject");
 
         switch (relationship) {
             case ONE_TO_ONE:
@@ -192,16 +185,17 @@ public class FieldData {
                     String str = getReferenceStr(linkID);
                     return new InsertField(this, i, str, "setString");
                 } else
-                    return new InsertReference(this, i);
+                    return new UpdateReference(this, i);
 
             case ONE_TO_MANY:
                 IDsResult r = getRelationIDs(val);
-                if (r.getMap().size() == 0)
+
+                if (r.getList().size() == 0)
                     return new InsertField(this, i, null, "setObject");
                 if (r.AreAllIDsSet())
-                    return new InsertField(this, i, JSON.toJSON(r.getMap()), "setString");
+                    return new InsertField(this, i, JSON.toJSON(r.getList()), "setString");
 
-                return new InsertReference(this, i);
+                return new UpdateReference(this, i);
             default:
                 throw new IllegalStateException("Unexpected value: " + relationship);
         }
@@ -223,35 +217,6 @@ public class FieldData {
         f.getMutator().invoke(obj, val);
     }
 
-    public void setValueToData(ResultSet resultSet, int i, Object data) throws SQLException {
-
-        if (relationship != Relationship.NONE)
-            return;
-
-        Object val;
-
-        if (convertToJSON) {
-            String txt = resultSet.getString(i);
-            val = JSON.fromJSON(f.getType(), txt);
-        } else {
-            switch (f.getType().getSimpleName()) {
-                case "boolean":
-                    val = resultSet.getBoolean(i);
-                    break;
-                case "int":
-                    val = resultSet.getInt(i);
-                    break;
-                case "String":
-                    val = resultSet.getString(i);
-                    break;
-                default:
-                    throw new IllegalStateException("Unexpected value: " + f.getType().getSimpleName());
-            }
-        }
-
-        setValue(data, val);
-    }
-
     @Override
     public String toString() {
         return "FieldData{" +
@@ -259,15 +224,41 @@ public class FieldData {
                 '}';
     }
 
+    public PullData preparePull(ResultSet resultSet, int n) throws SQLException {
+        if (f == null)
+            return null;
+
+        switch (relationship) {
+            case NONE:
+                return new PullField(this, resultSet, n);
+            case ONE_TO_ONE:
+                String txt = resultSet.getString(n);
+                if (!Strings.isNullOrEmpty(txt)) {
+                    DatabaseRef rf = JSON.readValue(DatabaseRef.class, txt);
+                    return new PullReference(this, rf);
+                    //    references.add(new LoadReference(this, rf));
+                }
+                return null;
+            case ONE_TO_MANY:
+                String arrayTxt = resultSet.getString(n);
+                if (!Strings.isNullOrEmpty(arrayTxt)) {
+                    List<DatabaseRef> list = JSON.readCollection(DatabaseRef.class, arrayTxt);
+                    return new PullReference(this, list);
+                    //references.add(new LoadReference(f, map));
+                }
+                return null;
+            default:
+                break;
+        }
+        throw new IllegalStateException("Unexpected value: " + relationship);
+    }
 
     public enum InsertOperation {
         INSERT_FOR_NEW_ENTRY,
         INSERT_FOR_UPDATE,
     }
 
-
 //    public static Object getContent(ResultSet resultSet, FieldData fieldData, int index) throws SQLException {
-//        throw new RuntimeException();
 ////        String str;
 ////        String[] array;
 ////        switch (columnType.getSimpleName()) {
@@ -309,18 +300,19 @@ public class FieldData {
 class IDsResult {
 
     private final boolean hasZero;
-    private final Map<Integer, String> map;
+    private final List<DatabaseRef> list;
 
-    public IDsResult(boolean hasZero, Map<Integer, String> map) {
+    public IDsResult(boolean hasZero, List<DatabaseRef> list) {
         this.hasZero = hasZero;
-        this.map = map;
+
+        this.list = list;
     }
 
     public boolean AreAllIDsSet() {
         return !hasZero;
     }
 
-    public Map<Integer, String> getMap() {
-        return map;
+    public List<DatabaseRef> getList() {
+        return list;
     }
 }

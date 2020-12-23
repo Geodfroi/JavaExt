@@ -13,11 +13,14 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ClassInfo {
     private final Class<?> clazz;
     private final List<FieldInfo> fields = new ArrayList<>();
     private final List<MethodInfo> methods = new ArrayList<>();
+
     public ClassInfo(Class<?> clazz) {
         this.clazz = clazz;
 
@@ -52,12 +55,51 @@ public class ClassInfo {
         return fields;
     }
 
-    private FieldInfo getField(String name) {
+    public FieldInfo getField(String name) {
+        if (name.startsWith("_"))
+            name = name.substring(1);
+
+        Pattern p = Pattern.compile("^_?" + name + "$");
         for (FieldInfo f : fields) {
-            if (f.getName().equals(name))
+            Matcher m = p.matcher(f.getName());
+            if (m.matches())
                 return f;
         }
         return null;
+    }
+
+    public FieldInfo getFieldWith(Class<? extends Annotation> clazz) {
+        for (var f : fields) {
+            if (f.getAnnotationIfPresent(clazz) != null)
+                return f;
+        }
+        return null;
+    }
+
+    public MethodInfo getMethod(String name) {
+        if (name.startsWith("_"))
+            name = name.substring(1);
+
+        Pattern p = Pattern.compile("^_?" + name + "$");
+        for (MethodInfo f : methods) {
+            Matcher m = p.matcher(f.getName());
+            if (m.matches())
+                return f;
+        }
+        return null;
+    }
+
+    public MethodInfo getMethodWith(Class<? extends Annotation> clazz) {
+        for (MethodInfo m : methods) {
+            if (m.isAnnotationPresent(clazz))
+                return m;
+        }
+        return null;
+    }
+
+    public boolean hasAccessibleConstructor() {
+        Constructor<?> c = ConstructorUtils.getAccessibleConstructor(this.clazz);
+        return c != null;
     }
 
     private Pair<Boolean, String> isMutator(Method method) {
@@ -82,36 +124,6 @@ public class ClassInfo {
             }
         }
         return new ImmutablePair<>(result, name);
-    }
-
-
-    public MethodInfo getMethodWith(Class<? extends Annotation> clazz) {
-        for (MethodInfo m : methods) {
-            if (m.isAnnotationPresent(clazz))
-                return m;
-        }
-        return null;
-    }
-
-    public MethodInfo getMethod(String methodName) {
-        for (var m : methods) {
-            if (m.getName().equals(methodName))
-                return m;
-        }
-        return null;
-    }
-
-    public boolean hasAccessibleConstructor() {
-        Constructor<?> c = ConstructorUtils.getAccessibleConstructor(this.clazz);
-        return c != null;
-    }
-
-    public FieldInfo getFieldWith(Class<? extends Annotation> clazz) {
-        for (var f : fields) {
-            if (f.getAnnotationIfPresent(clazz) != null)
-                return f;
-        }
-        return null;
     }
 }
 

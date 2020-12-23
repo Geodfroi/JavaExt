@@ -23,6 +23,9 @@ public class InsertField extends InsertData {
             case "setBytes":
                 statement.setBytes(getIndex(), (byte[])value);
                 break;
+            case "setInt":
+                statement.setInt(getIndex(), (int)value);
+                break;
             case "setObject":
                 statement.setObject(getIndex(), value);
                 break;

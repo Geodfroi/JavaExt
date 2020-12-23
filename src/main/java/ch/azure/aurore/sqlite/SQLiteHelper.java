@@ -24,13 +24,9 @@ public class SQLiteHelper {
     }
 
     public static boolean checkMissingFields(Connection conn, FieldsData fieldsData, DatabaseMetaDataWrapper m) {
-        //  DatabaseMetaDataWrapper m = getMetadata();
         boolean modified = false;
 
         for (FieldData e : fieldsData.getFields()) {
-
-            String type = e.getSQLType();
-
             if (!m.checkColumn(fieldsData.getClassName(), e.getColumnName())) {
 
                 String str = composeAddColumnStatement(fieldsData.getClassName(), e.getColumnName(), e.getSQLType());
@@ -49,50 +45,9 @@ public class SQLiteHelper {
                         e1.printStackTrace();
                     }
                 }
-                insertColumn(conn, fieldsData.getClassName(), e.getColumnName(), type);
                 modified = true;
             }
         }
-
-//        for (String fieldName: fieldsData.getFieldNames(FieldCategory.ALL)) {
-//
-//            String type;
-//            switch (fieldsData.getFieldCategory(fieldName)) {
-//                case ONE_TO_ONE_HIERARCHY:
-//                    type = getSQLType(int.class);
-//                    break;
-//                case ONE_TO_MANY_HIERARCHY:
-//                    type = getSQLType(String.class);
-//                    break;
-//                case PRIMITIVE_TYPE:
-//                    Field f = fieldsData.getField(FieldCategory.PRIMITIVE_TYPE, fieldName);
-//                    type = getSQLType(f.getType());
-//                    break;
-//                default:
-//                    throw new RuntimeException("Error checking [" + fieldsData.getClassName() + "] missing fields");
-//            }
-//
-//            if (!m.checkColumn(fieldsData.getClassName(), fieldName)){
-//                insertColumn(conn, fieldsData.getClassName(), fieldName, type);
-//                modified = true;
-//            }
-//        }
-//
-////        for (Map.Entry<String, Field> i : fieldsData.getFields(FieldCategory.primitiveType)) {
-////            String fieldName = i.getKey();
-////            Field f = i.getValue();
-////            if (!m.checkColumn(fieldsData.getClassName(), fieldName, f.getType())) {
-////                insertColumn(conn, fieldsData.getClassName(), fieldName, f.getType());
-////                modified = true;
-////            }
-////        }
-////
-////        for (String fieldName:fieldsData.getFieldNames(FieldCategory.hierarchyClass)){
-////            if (!m.checkColumn(fieldsData.getClassName(), fieldName, int.class)){
-////                insertColumn(conn, fieldsData.getClassName(), fieldName, int.class);
-////                modified = true;
-////            }
-////        }
         return modified;
     }
 
@@ -105,10 +60,6 @@ public class SQLiteHelper {
                 type;
         System.out.println(str);
         return str;
-    }
-
-    public static void insertColumn(Connection conn, String className, String name, String type) {
-        throw new IllegalStateException("insertColumn");
     }
 
     //region compose statements
@@ -171,13 +122,25 @@ public class SQLiteHelper {
         return str;
     }
 
+    public static String composeQueryAllStatement(FieldsData fieldsData) {
+        String str = "SELECT * FROM " + fieldsData.getClassName();
+        System.out.println(str);
+        return str;
+    }
+
+    public static String composeRemoveStatement(FieldsData fieldsData) {
+        String str = "DELETE FROM " + fieldsData.getClassName() + " WHERE _id = ?";
+        System.out.println(str);
+        return str;
+    }
+
     public static String composeUpdateStatement(FieldsData fieldsData) {
         StringBuilder str = new StringBuilder().
                 append("UPDATE ").
                 append(fieldsData.getClassName()).
                 append(" SET ");
 
-        var count = 0;
+        int count = 0;
         for (var e : fieldsData.getFields()) {
             str.append(e.getColumnName());
             if (count++ < fieldsData.getFields().size() - 1) {
@@ -191,16 +154,3 @@ public class SQLiteHelper {
     }
     //endregion
 }
-
-//    public static String composeQueryAllStatement(FieldsData fieldsData) {
-//        String str = "SELECT * FROM " + fieldsData.getClassName();
-//        System.out.println(str);
-//        return str;
-//    }
-//
-//    public static String composeRemoveStatement(FieldsData fieldsData) {
-//        String str ="DELETE FROM " + fieldsData.getClassName() + " WHERE _id = ?";
-//        System.out.println(str);
-//        return str;
-//    }
-//

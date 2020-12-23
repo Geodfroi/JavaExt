@@ -4,6 +4,8 @@ import ch.azure.aurore.generics.Generics;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class FieldInfo {
 
@@ -20,14 +22,14 @@ public class FieldInfo {
         return mutator;
     }
 
-    public MethodInfo getAccessor() {
-        return accessor;
-    }
-    //endregion
-
     //region mutators
     public void setMutator(MethodInfo methodInfo) {
         this.mutator = methodInfo;
+    }
+    //endregion
+
+    public MethodInfo getAccessor() {
+        return accessor;
     }
 
     public void setAccessor(MethodInfo methodInfo) {
@@ -50,7 +52,7 @@ public class FieldInfo {
         return f.getDeclaringClass();
     }
 
-    public String getName(){
+    public String getName() {
         return f.getName();
     }
 
@@ -68,6 +70,12 @@ public class FieldInfo {
 
     public boolean isAnnotationPresent(Class<? extends Annotation> clazz) {
         return f.isAnnotationPresent(clazz);
+    }
+
+    public boolean isNamed(String name) {
+        Pattern p = Pattern.compile("^_?" + name + "$", Pattern.CASE_INSENSITIVE );
+        Matcher m = p.matcher(f.getName());
+        return m.matches();
     }
 
     @Override

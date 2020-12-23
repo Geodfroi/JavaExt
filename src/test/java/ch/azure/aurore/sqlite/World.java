@@ -1,13 +1,15 @@
 package ch.azure.aurore.sqlite;
 
 import ch.azure.aurore.sqlite.wrapper.annotations.DatabaseClass;
-import ch.azure.aurore.sqlite.wrapper.annotations.PrimaryKey;
 
 @DatabaseClass
 public class World {
 
-    @PrimaryKey
+    boolean _modified;
+
     private int _id;
+
+    private GameObject protagonist;
 
     private String name;
 
@@ -19,6 +21,7 @@ public class World {
 
     public void setName(String name) {
         this.name = name;
+        _modified = true;
     }
 
     public int get_id() {
@@ -27,5 +30,22 @@ public class World {
 
     public void set_id(int _id) {
         this._id = _id;
+    }
+
+    public boolean is_modified() {
+        return _modified;
+    }
+
+    public void set_modified(boolean _modified) {
+        this._modified = _modified;
+    }
+
+    public GameObject getProtagonist() {
+        return protagonist;
+    }
+
+    public void setProtagonist(GameObject protagonist) {
+        this.protagonist = protagonist;
+        _modified = true;
     }
 }

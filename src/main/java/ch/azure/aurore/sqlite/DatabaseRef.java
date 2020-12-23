@@ -3,30 +3,29 @@ package ch.azure.aurore.sqlite;
 public class DatabaseRef {
 
     private int id;
-    private String className;
+    private String type;
 
     public DatabaseRef(){
     }
 
-    public DatabaseRef(int id, String className) {
-
+    public DatabaseRef(int id, String type) {
         this.id = id;
-        this.className = className;
+        this.type = type;
     }
 
     public int getId() {
         return id;
     }
 
-    public String getClassName() {
-        return className;
+    public String getType() {
+        return type;
     }
 
     public void setId(int id) {
         this.id = id;
     }
 
-    public void setClassName(String className) {
-        this.className = className;
+    public void setType(String type) {
+        this.type = type;
     }
 }

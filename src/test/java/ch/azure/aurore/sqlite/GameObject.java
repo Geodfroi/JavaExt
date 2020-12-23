@@ -1,7 +1,6 @@
 package ch.azure.aurore.sqlite;
 
 import ch.azure.aurore.sqlite.wrapper.annotations.DatabaseClass;
-import ch.azure.aurore.sqlite.wrapper.annotations.PrimaryKey;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -9,7 +8,7 @@ import java.util.List;
 
 @DatabaseClass
 public class GameObject {
-    @PrimaryKey
+
     private int _id;
     private String name;
     private boolean _modified = true;
@@ -38,6 +37,10 @@ public class GameObject {
 
     public List<Enemy> getEnemies() {
         return enemies;
+    }
+
+    public void setEnemies(List<Enemy> enemies) {
+        this.enemies = enemies;
     }
 
     public void setImage(byte[] image) {
@@ -94,6 +97,7 @@ public class GameObject {
         _modified = true;
     }
 
+
     public World getWorld() {
         return world;
     }
@@ -103,7 +107,11 @@ public class GameObject {
         _modified = true;
     }
 
-    public boolean isModified() {
+    public boolean is_modified() {
         return _modified;
+    }
+
+    public void set_modified(boolean _modified) {
+        this._modified = _modified;
     }
 }
