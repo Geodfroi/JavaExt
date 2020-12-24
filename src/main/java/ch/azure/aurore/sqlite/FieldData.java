@@ -55,9 +55,6 @@ public class FieldData {
         DatabaseName fieldAnnotation = f.getAnnotationIfPresent(DatabaseName.class);
         this.columnName = fieldAnnotation == null ? f.getName() : (Strings.isNullOrEmpty(fieldAnnotation.value()) ? f.getName() : fieldAnnotation.value());
 
-        if (columnName.equals("tags")){
-            System.out.println("huh");
-        }
         Class<?> fieldType = f.getType();
 
         if (fieldTypeToSQL.containsKey(fieldType)) {
@@ -236,17 +233,15 @@ public class FieldData {
                 if (!Strings.isNullOrEmpty(txt)) {
                     DatabaseRef rf = JSON.readValue(DatabaseRef.class, txt);
                     return new PullReference(this, rf);
-                    //    references.add(new LoadReference(this, rf));
                 }
-                return null;
+                return new PullReference(this);
             case ONE_TO_MANY:
                 String arrayTxt = resultSet.getString(n);
                 if (!Strings.isNullOrEmpty(arrayTxt)) {
                     List<DatabaseRef> list = JSON.readCollection(DatabaseRef.class, arrayTxt);
                     return new PullReference(this, list);
-                    //references.add(new LoadReference(f, map));
                 }
-                return null;
+                return new PullReference(this);
             default:
                 break;
         }
@@ -257,44 +252,6 @@ public class FieldData {
         INSERT_FOR_NEW_ENTRY,
         INSERT_FOR_UPDATE,
     }
-
-//    public static Object getContent(ResultSet resultSet, FieldData fieldData, int index) throws SQLException {
-////        String str;
-////        String[] array;
-////        switch (columnType.getSimpleName()) {
-////
-////            case "byte[]":
-////                return resultSet.getBytes(index);
-////            case "double":
-////                return resultSet.getDouble(index);
-////            case "double[]":
-////                str = resultSet.getString(index);
-////                array = str == null ? new String[0] : str.split(Strings.DEFAULT_SEPARATOR);
-////                return Conversions.toDoubleArray(array);
-////            case "int":
-////            case "int[]":
-////                str = resultSet.getString(index);
-////                array = str == null ? new String[0] : str.split(Strings.DEFAULT_SEPARATOR);
-////                return Conversions.toIntArray(array);
-////            case "String":
-////
-////            case "String[]":
-////                return resultSet.getString(index).split(Strings.DEFAULT_SEPARATOR);
-////            default:
-////                throw new RuntimeException("Can't fetch value from database for type [" + columnType.getSimpleName() + "] in [getStatement] method");
-////        }
-//    }
-    //                    switch (fieldsData.getFieldCategory(md.getColumnName(n))){
-//                        case primitiveType:
-//                            Class<?> type = fieldsData.getPrimitiveFieldType(md.getColumnName(n));
-//
-//                            fieldsData.setValueToObj(FieldCategory.primitiveType, data, content, md.getColumnName(n));
-//                            break;
-//                        case hierarchyClass:
-//                            int classID = (int)getContent(resultSet, int.class,n);
-//                            hierarchyClassFieldIds.put(md.getColumnName(n), classID);
-//                            break;
-//                    }
 }
 
 class IDsResult {

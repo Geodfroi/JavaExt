@@ -25,7 +25,7 @@ public class FieldsData {
     private final List<FieldData> fields = new ArrayList<>();
     private final MethodInfo unpackMethod;
     private final MethodInfo packMethod;
-    private FieldInfo idField;
+    private FieldData idField;
     private FieldInfo modifiedField;
 
     public FieldsData(Class<?> aClass) {
@@ -44,7 +44,7 @@ public class FieldsData {
                 continue;
 
             if (f.isNamed(ID_FIELD))
-                idField = f;
+                idField = new FieldData(f);
             else if (f.isNamed(MODIFIER_FIELD))
                 modifiedField = f;
             else
@@ -82,11 +82,14 @@ public class FieldsData {
             if (f.getColumnName().equals(columnName))
                 return f;
         }
+        if (idField.getName().equals(columnName))
+            return idField;
+
         return null;
     }
 
     public int getID(Object data) {
-        return (int) idField.getAccessor().invoke(data);
+        return (int)idField.getFieldValue(data);
     }
 
     public boolean isModified(Object data) {
@@ -103,7 +106,7 @@ public class FieldsData {
     }
 
     public void setID(Object data, int id) {
-        idField.getMutator().invoke(data, id);
+        idField.setValue(data, id);
     }
 
     @Override

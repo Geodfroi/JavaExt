@@ -106,6 +106,14 @@ public class SQLiteImplementation {
         map.put(id, data);
     }
 
+    private void removeReferencedObject(Class<?> clazz, int id) {
+        if (!classLoadedItems.containsKey(clazz))
+            return;
+
+        Map<Integer, Object> items = classLoadedItems.get(clazz);
+        items.remove(id);
+    }
+
     //region queries
     private int insertItem(Object data) {
         FieldsData fieldsData = loadFieldsData(data.getClass());
@@ -298,83 +306,53 @@ public class SQLiteImplementation {
         if (!queryAllStatements.containsKey(clazz)) {
             String str = SQLiteHelper.composeQueryAllStatement(fieldsData);
             try {
-                removeStatements.put(clazz, conn.prepareStatement(str));
+                queryAllStatements.put(clazz, conn.prepareStatement(str));
             } catch (SQLException e) {
                 e.printStackTrace();
                 System.out.println("failure to create remove statement for [" + clazz + "]");
             }
         }
 
-        List<T> items = new ArrayList<>();
-        throw new IllegalStateException("not implemented");
+        ResultSet resultSet = null;
+        List<List<PullData>> pulls = new ArrayList<>();
+        try {
+            resultSet = queryAllStatements.get(clazz).executeQuery();
+            ResultSetMetaData md = resultSet.getMetaData();
 
-//        ResultSet resultSet = null;
-//        try{
-//            resultSet = queryAllStatements.get(aClass).executeQuery();
-//            ResultSetMetaData md = resultSet.getMetaData();
-//            while (resultSet.next()){
-//                T data;
-//                HashMap<String, Integer> hierarchyClassFieldIds = new HashMap<>();
-//
-//                try {
-//                    data = aClass.getDeclaredConstructor().newInstance();
-//                    items.add(data);
-//                    var count = md.getColumnCount();
-//                    System.out.println(count);
-//                    int n = 1;
-//                    while (n <= md.getColumnCount()){
-//                        Object value;
-//                        String d = md.getColumnName(n);
-//                        System.out.println(d);
-//                        switch (fieldsData.getFieldCategory(md.getColumnName(n))) {
-//                            case hierarchyClass:
-//                                int classID = (int)getContent(resultSet, int.class,n);
-//                                hierarchyClassFieldIds.put(md.getColumnName(n), classID);
-//                                break;
-//                            case primitiveType:
-//                                Class<?> type = fieldsData.getPrimitiveFieldType(md.getColumnName(n));
-//                                value = getContent(resultSet, type, n);
-//                                fieldsData.setValueToObj(FieldCategory.primitiveType, data, value, md.getColumnName(n));
-//                                break;
-//                            case idField:
-//                                value = getContent(resultSet, int.class, n);
-//                                fieldsData.setID(data, (int)value);
-//                                break;
-//                        }
-//                        n++;
-//                    }
-//
-//                    for (Map.Entry<String, Integer> i: hierarchyClassFieldIds.entrySet()) {
-//                        loadIntoHierarchyField(fieldsData,data, i.getKey(), i.getValue());
-//                    }
-//
-//                } catch (ReflectiveOperationException e ) {
-//                    System.out.println("Failure to instantiate [" + aClass.getSimpleName() + "] object");
-//                    e.printStackTrace();
-//                    return null;
-//                }
-//            }
-//        } catch (SQLException e) {
-//            e.printStackTrace();
-//        }finally {
-//            if (resultSet!= null) {
-//                try {
-//                    resultSet.close();
-//                } catch (SQLException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//        }
-//        items.forEach(fieldsData::unpack);
-//        return items;
-//    }
-//
-//    private <T> void loadIntoHierarchyField(FieldsData fieldsData, T data, String fieldName, int fieldID) {
-//        Field field = fieldsData.getField(FieldCategory.hierarchyClass, fieldName);
-//        Object obj = queryItem(field.getType(), fieldID);
-//        fieldsData.setValueToObj(FieldCategory.hierarchyClass, data, obj, fieldName);
-//    }
+            while (resultSet.next()) {
+                List<PullData> list = new ArrayList<>();
+                pulls.add(list);
+                for (int n = 1; n <= md.getColumnCount(); n++) {
+                    FieldData f = fieldsData.getField(md.getColumnName(n));
+                    PullData p = f.preparePull(resultSet, n);
+                    list.add(p);
+                }
+            }
 
+        } catch (SQLException e0) {
+            System.out.println("Failure to retrieve [" + clazz.getSimpleName() + "] items");
+            e0.printStackTrace();
+            return null;
+        } finally {
+            if (resultSet != null) {
+                try {
+                    resultSet.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        List<T> dataList = new ArrayList<>();
+        for (List<PullData> list : pulls) {
+            T data = createEmpty(clazz);
+            dataList.add(data);
+            for (PullData p : list)
+                p.execute(this, data);
+            fieldsData.unpack(data);
+            fieldsData.setModified(data, false);
+        }
+        return dataList;
     }
 
     public boolean removeItem(Object data) {
@@ -410,12 +388,4 @@ public class SQLiteImplementation {
         return false;
     }
     //endregion
-
-    private void removeReferencedObject(Class<?> clazz, int id) {
-        if (!classLoadedItems.containsKey(clazz))
-            return;
-
-        Map<Integer, Object> items = classLoadedItems.get(clazz);
-        items.remove(id);
-    }
 }

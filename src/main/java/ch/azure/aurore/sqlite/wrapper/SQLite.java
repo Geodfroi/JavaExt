@@ -31,25 +31,20 @@ public class SQLite {
         return null;
     }
 
-    public void close() {
-        implementation.close();
+    void clearMemory() {
+        implementation.clearMemory();
     }
 
-    /**
-     * Update the data in database; if the item is not present in database, it will be inserted instead; the update query will also insert or update all [DatabaseClass] field items in the database
-     * @param data the item to be inserted or updated inside the database; data without a [DatabaseClass] annotation will cause an IllegalStateException.
-     * @return return true if update is successful.
-     */
-    public boolean updateItem(Object data) {
-        return implementation.updateItem(data, new ArrayList<>());
+    public void close() {
+        implementation.close();
     }
 
     public <T> T queryItem(Class<T> clazz, int id) {
         return implementation.queryItem(clazz, id);
     }
 
-    void clearMemory() {
-        implementation.clearMemory();
+    public <T> List<T> queryItems(Class<T > clazz) {
+        return implementation.queryItems(clazz);
     }
 
     /**
@@ -60,8 +55,13 @@ public class SQLite {
         return implementation.removeItem(data);
     }
 
-    public <T> List<T> queryItems(Class<T > clazz) {
-        return implementation.queryItems(clazz);
+    /**
+     * Update the data in database; if the item is not present in database, it will be inserted instead; the update query will also insert or update all [DatabaseClass] field items in the database
+     * @param data the item to be inserted or updated inside the database; data without a [DatabaseClass] annotation will cause an IllegalStateException.
+     * @return return true if update is successful.
+     */
+    public boolean updateItem(Object data) {
+        return implementation.updateItem(data, new ArrayList<>());
     }
 }
 
