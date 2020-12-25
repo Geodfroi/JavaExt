@@ -125,16 +125,11 @@ public class ClassInfo {
         }
         return new ImmutablePair<>(result, name);
     }
-}
 
-//    public static AccessorInfo[] getGetterMethods(Class<?> aClass) {
-//        return Arrays.stream(aClass.getDeclaredMethods()).
-//                filter(Reflection::isGetter).
-//                toArray(AccessorInfo[]::new);
-//    }
-//
-//    public static Method[] getSetterMethods(Class<?> aClass) {
-//        return Arrays.stream(aClass.getDeclaredMethods()).
-//                filter(Reflection::isSetter).
-//                toArray(Method[]::new);
-//    }
+    @Override
+    public String toString() {
+        return "ClassInfo{" +
+                "clazz=" + clazz +
+                '}';
+    }
+}

@@ -123,27 +123,17 @@ public class SQLiteImplementation {
 
         fieldsData.pack(data);
         id = -1;
-
-        if (!insertStatements.containsKey(data.getClass())) {
-            try {
-                String str = SQLiteHelper.composeInsertStatement(fieldsData);
-                insertStatements.put(data.getClass(), conn.prepareStatement(str));
-            } catch (SQLException e) {
-                System.out.println("failed to create insert statement for class [" + data.getClass() + "]");
-                e.printStackTrace();
-                return -1;
-            }
-        }
-
-        ResultSet result = null;
+        
+        SQLiteHelper.checkStatement(conn, fieldsData, insertStatements, data.getClass(), SQLiteHelper::composeInsertStatement);
         PreparedStatement statement = insertStatements.get(data.getClass());
 
+        ResultSet result = null;
         int insertCount = 1;
 
         try {
             for (FieldData f : fieldsData.getFields()) {
                 InsertField operation = (InsertField) f.prepareInsert(insertCount++, data, FieldData.InsertOperation.INSERT_FOR_NEW_ENTRY);
-                operation.execute(statement, data, true);
+                operation.execute(statement, data);
             }
             if (statement.executeUpdate() == 1) {
                 result = statement.getGeneratedKeys();
@@ -168,11 +158,10 @@ public class SQLiteImplementation {
 
     /**
      * @param data  update data;
-     * @param trace list of previously updated items with the current public update query; used to avoid circular update calls.
+     * @param trace0 list of previously updated items with the current public update query; used to avoid circular update calls.
      * @return return true if update is successful.
      */
-    public boolean updateItem(Object data, List<Object> trace) {
-        trace.add(data);
+    public boolean updateItem(Object data, List<Object> trace0) {
 
         FieldsData fieldsData = loadFieldsData(data.getClass());
         if (getMetadata().isMissing(fieldsData.getClassName())) {
@@ -182,44 +171,36 @@ public class SQLiteImplementation {
             metadata = null;
 
         int id = fieldsData.getID(data);
+        boolean isModified = fieldsData.isModified(data);
+
         if (id == 0) {
             System.out.println("[" + data + "] data without preset id will be inserted instead of updated");
             id = insertItem(data);
+            isModified = true;
         }
         putInMemory(data, id);
         fieldsData.pack(data);
 
         List<InsertData> inserts = new ArrayList<>();
         int insertCount = 1;
-        boolean isModified = fieldsData.isModified(data);
 
         for (FieldData f : fieldsData.getFields()) {
             InsertData i = f.prepareInsert(insertCount++, data, FieldData.InsertOperation.INSERT_FOR_UPDATE);
             inserts.add(i);
 
             if (i instanceof UpdateReference) {
-                boolean ins = ((UpdateReference) i).forwardReference(this, data, trace);
+                ((UpdateReference) i).forwardReference(this, data, trace0);
                 isModified = true;
-                if (!ins)
-                    System.out.println("Failure to insert [" + i.getFieldData().getName() + "] value in [" + data.getClass().getSimpleName() + "]");
             }
         }
 
         if (isModified) {
-            if (!updateStatements.containsKey(data.getClass())) {
-                String str = SQLiteHelper.composeUpdateStatement(fieldsData);
-                try {
-                    updateStatements.put(data.getClass(), conn.prepareStatement(str));
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    System.out.println("Failed to create update statement for class [" + data.getClass() + "]");
-                }
-            }
+            SQLiteHelper.checkStatement(conn, fieldsData, updateStatements, data.getClass(), SQLiteHelper::composeUpdateStatement);
             PreparedStatement statement = updateStatements.get(data.getClass());
 
             try {
                 for (InsertData i : inserts)
-                    i.execute(statement, data, true);
+                    i.execute(statement, data);
                 statement.setInt(insertCount, id);
                 if (statement.executeUpdate() == 1)
                     return true;
@@ -244,19 +225,10 @@ public class SQLiteImplementation {
         if (failChecks(fieldsData))
             return null;
 
-        if (!idQueryStatements.containsKey(clazz)) {
-            String str = SQLiteHelper.composeQueryStatement(fieldsData);
-            try {
-                idQueryStatements.put(clazz, conn.prepareStatement(str));
-            } catch (SQLException e) {
-                e.printStackTrace();
-                System.out.println("Failed to create query statement");
-                return null;
-            }
-        }
+        SQLiteHelper.checkStatement(conn, fieldsData, idQueryStatements, clazz, SQLiteHelper::composeQueryStatement);
+        PreparedStatement statement = idQueryStatements.get(clazz);
 
         ResultSet resultSet = null;
-        PreparedStatement statement = idQueryStatements.get(clazz);
 
         T data = createEmpty(clazz);
         List<PullData> pulls = new ArrayList<>();
@@ -303,20 +275,13 @@ public class SQLiteImplementation {
         if (failChecks(fieldsData))
             return null;
 
-        if (!queryAllStatements.containsKey(clazz)) {
-            String str = SQLiteHelper.composeQueryAllStatement(fieldsData);
-            try {
-                queryAllStatements.put(clazz, conn.prepareStatement(str));
-            } catch (SQLException e) {
-                e.printStackTrace();
-                System.out.println("failure to create remove statement for [" + clazz + "]");
-            }
-        }
+        SQLiteHelper.checkStatement(conn, fieldsData, queryAllStatements, clazz, SQLiteHelper::composeQueryAllStatement);
+        PreparedStatement statement = queryAllStatements.get(clazz);
 
         ResultSet resultSet = null;
         List<List<PullData>> pulls = new ArrayList<>();
         try {
-            resultSet = queryAllStatements.get(clazz).executeQuery();
+            resultSet = statement.executeQuery();
             ResultSetMetaData md = resultSet.getMetaData();
 
             while (resultSet.next()) {
@@ -356,29 +321,20 @@ public class SQLiteImplementation {
     }
 
     public boolean removeItem(Object data) {
-        Class<?> aClass = data.getClass();
-        FieldsData fieldsData = loadFieldsData(aClass);
+        Class<?> clazz = data.getClass();
+        FieldsData fieldsData = loadFieldsData(clazz);
         if (failChecks(fieldsData))
             return false;
 
         int id = fieldsData.getID(data);
-        removeReferencedObject(aClass, id);
+        removeReferencedObject(clazz, id);
 
-        if (!removeStatements.containsKey(aClass)) {
-            String str = SQLiteHelper.composeRemoveStatement(fieldsData);
-            try {
-                removeStatements.put(aClass, conn.prepareStatement(str));
-            } catch (SQLException e) {
-                e.printStackTrace();
-                System.out.println("failure to create remove statement for [" + data + "]");
-            }
-        }
-
-        PreparedStatement removeStatement = removeStatements.get(aClass);
+        SQLiteHelper.checkStatement(conn, fieldsData, removeStatements, clazz, SQLiteHelper::composeRemoveStatement);
+        PreparedStatement statement = removeStatements.get(clazz);
 
         try {
-            removeStatement.setInt(1, id);
-            if (removeStatement.executeUpdate() == 1)
+            statement.setInt(1, id);
+            if (statement.executeUpdate() == 1)
                 return true;
 
         } catch (SQLException e0) {

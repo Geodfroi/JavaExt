@@ -4,23 +4,33 @@ import ch.azure.aurore.json.JSON;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Collection;
 
 public class PullField extends PullData {
 
-    private Object val;
+    private final Object val;
 
     public PullField(FieldData f, ResultSet resultSet, int index) throws SQLException {
         super(f);
+
         if (fieldData.isConvertToJSON()) {
             String txt = resultSet.getString(index);
-            if (Collection.class.isAssignableFrom(f.getType())) {
-                if (f.getInternalType() == null)
-                    throw new IllegalStateException("internal type not set");
-
-                val = JSON.readCollection(f.getInternalType(), txt);
-            } else
-                val = JSON.readValue(f.getType(), txt);
+            switch (f.getType().getSimpleName()) {
+                case "List":
+                    if (f.getInternalType() == null)
+                        throw new IllegalStateException("internal type not set");
+                    val = JSON.readList(f.getInternalType(), txt);
+                    break;
+                case "Set":
+                    if (f.getInternalType() == null)
+                        throw new IllegalStateException("internal type not set");
+                    val = JSON.readSet(f.getInternalType(), txt);
+                    break;
+                case "Map":
+                    throw new IllegalStateException("Map collection is not yet implemented");
+                default:
+                    val = JSON.readValue(f.getType(), txt);
+                    break;
+            }
         } else {
             switch (f.getType().getSimpleName()) {
                 case "boolean":

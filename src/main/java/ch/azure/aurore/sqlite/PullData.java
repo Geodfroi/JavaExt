@@ -8,4 +8,11 @@ public abstract class PullData {
     }
 
     public abstract <T> void execute(SQLiteImplementation sq, T data);
+
+    @Override
+    public String toString() {
+        return "PullData{" +
+                "fieldData=" + fieldData +
+                '}';
+    }
 }

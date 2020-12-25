@@ -40,7 +40,7 @@ public class FieldsData {
             throw new RuntimeException("Class [" + aClass.getSimpleName() + "] does not contains a public parameterless constructor");
 
         for (FieldInfo f : classInfo.getFields()) {
-            if (!f.hasAccessor() || !f.hasMutator())
+            if (!f.hasAccessor() || !f.hasMutator() || f.isIgnored())
                 continue;
 
             if (f.isNamed(ID_FIELD))

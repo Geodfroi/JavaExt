@@ -57,6 +57,20 @@ public class SQLite {
 
     /**
      * Update the data in database; if the item is not present in database, it will be inserted instead; the update query will also insert or update all [DatabaseClass] field items in the database
+     * @param args the items to be inserted or updated inside the database; data without a [DatabaseClass] annotation will cause an IllegalStateException.
+     * @return return true if update is successful.
+     */
+    public boolean updateItems(Object... args) {
+        boolean allUpdated = true;
+        for (Object data: args) {
+            if (!implementation.updateItem(data, new ArrayList<>()))
+                allUpdated = false;
+        }
+        return allUpdated;
+    }
+
+    /**
+     * Update the data in database; if the item is not present in database, it will be inserted instead; the update query will also insert or update all [DatabaseClass] field items in the database
      * @param data the item to be inserted or updated inside the database; data without a [DatabaseClass] annotation will cause an IllegalStateException.
      * @return return true if update is successful.
      */

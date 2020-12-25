@@ -30,11 +30,11 @@ public class PullReference extends PullData {
         switch (fieldData.getRelationship()) {
             case ONE_TO_ONE:
                 if (rf != null){
-                    Class<?> fieldType = fieldData.getType();
                     id = rf.getId();
-                    obj = sq.fetchReferencedObject(fieldType, id);
+                    Class<?> clazz = Reflection.getClass(rf.getType());
+                    obj = sq.fetchReferencedObject(clazz, id);
                     if (obj == null)
-                        obj = sq.queryItem(fieldType, id);
+                        obj = sq.queryItem(clazz, id);
 
                     sq.putInMemory(obj, id);
                     fieldData.setValue(data, obj);

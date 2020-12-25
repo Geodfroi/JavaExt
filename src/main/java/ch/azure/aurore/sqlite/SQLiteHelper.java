@@ -1,8 +1,12 @@
 package ch.azure.aurore.sqlite;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class SQLiteHelper {
     public static void createTable(Connection conn, FieldsData fieldsData) {
@@ -152,5 +156,19 @@ public class SQLiteHelper {
         System.out.println("SQL: " + str.toString());
         return str.toString();
     }
+
     //endregion
+
+    public static void checkStatement(Connection conn, FieldsData fields, Map<Class<?>, PreparedStatement> statements, Class<?> aClass, Function<FieldsData, String> func) {
+        if (!statements.containsKey(aClass)) {
+            try {
+                //  String str = SQLiteHelper.composeInsertStatement(fields);
+                String str =  func.apply(fields);
+                statements.put(aClass, conn.prepareStatement(str));
+            } catch (SQLException e) {
+                e.printStackTrace();
+                throw new IllegalStateException("failed to create insert statement for class [" + aClass + "]");
+            }
+        }
+    }
 }

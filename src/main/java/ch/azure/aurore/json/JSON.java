@@ -5,9 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 
 /**
@@ -44,7 +42,18 @@ public class JSON {
         return null;
     }
 
-    public static <TInternal> List<TInternal> readCollection(Class<TInternal> type, String str) {
+    public static <TInternal> Set<TInternal> readSet(Class<TInternal> type, String str) {
+        try {
+            CollectionType javaType = mapper.getTypeFactory()
+                    .constructCollectionType(Set.class, type);
+            return mapper.readValue(str, javaType);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            return new HashSet<>();
+        }
+    }
+
+    public static <TInternal> List<TInternal> readList(Class<TInternal> type, String str) {
         try {
             CollectionType javaType = mapper.getTypeFactory()
                     .constructCollectionType(List.class, type);
@@ -54,6 +63,4 @@ public class JSON {
             return new ArrayList<>();
         }
     }
-
-
 }

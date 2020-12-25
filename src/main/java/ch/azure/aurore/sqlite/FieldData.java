@@ -141,7 +141,7 @@ public class FieldData {
     }
 
     public String getReferenceStr(int id) {
-        DatabaseRef r = new DatabaseRef(id, relationFieldID.getDeclaringClass().getSimpleName());
+        DatabaseRef r = new DatabaseRef(id, relationFieldID.getDeclaringClass().getName());
         return JSON.toJSON(r);
     }
 
@@ -238,7 +238,7 @@ public class FieldData {
             case ONE_TO_MANY:
                 String arrayTxt = resultSet.getString(n);
                 if (!Strings.isNullOrEmpty(arrayTxt)) {
-                    List<DatabaseRef> list = JSON.readCollection(DatabaseRef.class, arrayTxt);
+                    List<DatabaseRef> list = JSON.readList(DatabaseRef.class, arrayTxt);
                     return new PullReference(this, list);
                 }
                 return new PullReference(this);

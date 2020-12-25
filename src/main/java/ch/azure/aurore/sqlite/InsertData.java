@@ -12,7 +12,7 @@ public abstract class InsertData {
         index = i;
     }
 
-    public abstract void execute(PreparedStatement statement, Object data, boolean isModified) throws SQLException;
+    public abstract void execute(PreparedStatement statement, Object data) throws SQLException;
 
     public FieldData getFieldData() {
         return fieldData;

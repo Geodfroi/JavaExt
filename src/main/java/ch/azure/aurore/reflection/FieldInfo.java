@@ -1,6 +1,7 @@
 package ch.azure.aurore.reflection;
 
 import ch.azure.aurore.generics.Generics;
+import ch.azure.aurore.sqlite.wrapper.annotations.DatabaseIgnore;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -10,32 +11,40 @@ import java.util.regex.Pattern;
 public class FieldInfo {
 
     private final Field f;
+    private final boolean ignored;
     private MethodInfo mutator;
     private MethodInfo accessor;
 
     public FieldInfo(Field f) {
         this.f = f;
+        ignored = f.isAnnotationPresent(DatabaseIgnore.class);
+
     }
 
-    //region accessors
+    //region Accessors
+    public MethodInfo getAccessor() {
+        return accessor;
+    }
+
     public MethodInfo getMutator() {
         return mutator;
     }
 
-    //region mutators
+    public boolean isIgnored() {
+        return ignored;
+    }
+    //endregion
+
+    //region Mutators
+    public void setAccessor(MethodInfo methodInfo) {
+        this.accessor = methodInfo;
+    }
+
     public void setMutator(MethodInfo methodInfo) {
         this.mutator = methodInfo;
     }
     //endregion
 
-    public MethodInfo getAccessor() {
-        return accessor;
-    }
-
-    public void setAccessor(MethodInfo methodInfo) {
-        this.accessor = methodInfo;
-    }
-    //endregion
 
     public <T extends Annotation> T getAnnotationIfPresent(Class<T> aClass) {
         if (isAnnotationPresent(aClass))
@@ -84,4 +93,5 @@ public class FieldInfo {
                 "f=" + f +
                 '}';
     }
+
 }

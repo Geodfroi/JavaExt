@@ -5,8 +5,8 @@ import ch.azure.aurore.json.JSON;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class UpdateReference extends InsertData {
 
@@ -15,10 +15,7 @@ public class UpdateReference extends InsertData {
     }
 
     @Override
-    public void execute(PreparedStatement statement, Object data, boolean isModified) throws SQLException {
-        if (!isModified)
-            return;
-
+    public void execute(PreparedStatement statement, Object data) throws SQLException {
         Object value = getFieldData().getFieldValue(data);
         if (getFieldData().getRelationship() == Relationship.ONE_TO_ONE) {
             int id = getFieldData().getRelationId(value);
@@ -34,27 +31,29 @@ public class UpdateReference extends InsertData {
         }
     }
 
-    public boolean forwardReference(SQLiteImplementation sqLite, Object data, List<Object> trace) {
+    public void forwardReference(SQLiteImplementation sqLite, Object data, List<Object> trace0) {
+
+        boolean canForward = !trace0.contains(data);
+
         Object fieldValue = getFieldData().getFieldValue(data);
-        if (fieldValue == null)
-            return false;
+        if (fieldValue == null || !canForward)
+            return;
+
+        List<Object> trace1 = new ArrayList<>(trace0);
+        trace1.add(data);
 
         if (getFieldData().getRelationship() == Relationship.ONE_TO_ONE) {
-            if (!trace.contains(fieldValue))
-                return sqLite.updateItem(fieldValue, trace);
-            return false;
+            sqLite.updateItem(fieldValue, trace1);
 
         } else if (getFieldData().getRelationship() == Relationship.ONE_TO_MANY) {
-            List<Object> i = Generics.getCollectionFromField(fieldValue).stream().
-                    filter(o -> !trace.contains(0)).collect(Collectors.toList());
+            List<Object> i = Generics.getCollectionFromField(fieldValue); //.stream().filter(obj -> !trace.contains(obj)).collect(Collectors.toList());
             if (i.size() == 0)
-                return true;
+                return;
             for (Object obj : i) {
-                if (!sqLite.updateItem(obj, trace))
-                    return false;
+                if (!sqLite.updateItem(obj, trace1))
+                    return;
             }
         }
-        return true;
     }
 
     @Override
