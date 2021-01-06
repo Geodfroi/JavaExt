@@ -21,6 +21,7 @@ public class DatabaseRef {
         return type;
     }
 
+    @SuppressWarnings("unused")
     public void setId(int id) {
         this.id = id;
     }

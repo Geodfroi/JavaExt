@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.databind.type.MapType;
+import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.IOException;
 import java.util.*;
@@ -26,8 +27,7 @@ public class JSON {
         return null;
     }
 
-
-    public static <T> T readValue(Class<T> clazz, String str) {
+    public static <T> T readObjectValue(Class<T> clazz, String str) {
 
         if (Strings.isNullOrEmpty(str))
             return null;
@@ -36,12 +36,6 @@ public class JSON {
             if (Collection.class.isAssignableFrom(clazz))
                 throw new IllegalArgumentException("Can't parse str collection using [fromJSON], use [loadCollection] instead");
 
-//            Pattern p = Pattern.compile("^\\[.*]$");
-//            var isArrayOrCollection = p.matcher(str).matches();
-//            System.out.println("isArray: " + isArrayOrCollection);
-//           d.");
-
-            // for array or values
             return mapper.readValue(str, clazz);
         } catch (JsonProcessingException e) {
             e.printStackTrace();
@@ -84,6 +78,9 @@ public class JSON {
     }
 
     public static Object readItem(Class<?> clazz, String str) {
+        if (Strings.isNullOrEmpty(str))
+            return null;
+
         try {
             return mapper.readValue(str, clazz);
         } catch (JsonProcessingException e) {

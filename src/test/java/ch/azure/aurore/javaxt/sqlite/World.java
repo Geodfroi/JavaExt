@@ -1,5 +1,6 @@
 package ch.azure.aurore.javaxt.sqlite;
 
+import ch.azure.aurore.javaxt.sqlite.wrapper.SQLiteData;
 import ch.azure.aurore.javaxt.sqlite.wrapper.annotations.DatabaseClass;
 import ch.azure.aurore.javaxt.sqlite.wrapper.annotations.DatabaseIgnore;
 import ch.azure.aurore.javaxt.sqlite.wrapper.annotations.DatabaseName;
@@ -7,13 +8,16 @@ import ch.azure.aurore.javaxt.sqlite.wrapper.annotations.DatabaseName;
 import java.util.HashSet;
 import java.util.Set;
 
+@SuppressWarnings("unused")
 @DatabaseClass(dbName = "Setting")
-public class World {
+public class World extends SQLiteData {
 
-    boolean _modified;
-
-    private int _id;
     private Set<String> tags = new HashSet<>();
+    @DatabaseName(value = "hero")
+    private GameObject protagonist;
+    private String name;
+    @DatabaseIgnore
+    private int time;
 
     public Set<String> getTags() {
         return tags;
@@ -23,16 +27,12 @@ public class World {
         this.tags = tags;
     }
 
-    @DatabaseName(value = "hero")
-    private GameObject protagonist;
-
-    private String name;
-
-    @DatabaseIgnore
-    private int time;
-
     public int getTime() {
         return time;
+    }
+
+    public void setTime(int i) {
+        time = i;
     }
 
     public String getName() {
@@ -41,23 +41,7 @@ public class World {
 
     public void setName(String name) {
         this.name = name;
-        _modified = true;
-    }
-
-    public int get_id() {
-        return _id;
-    }
-
-    public void set_id(int _id) {
-        this._id = _id;
-    }
-
-    public boolean is_modified() {
-        return _modified;
-    }
-
-    public void set_modified(boolean _modified) {
-        this._modified = _modified;
+        set_modified(true);
     }
 
     public GameObject getProtagonist() {
@@ -66,9 +50,5 @@ public class World {
 
     public void setProtagonist(GameObject protagonist) {
         this.protagonist = protagonist;
-    }
-
-    public void setTime(int i) {
-        time = i;
     }
 }

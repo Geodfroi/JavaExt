@@ -1,5 +1,6 @@
 package ch.azure.aurore.javaxt.sqlite;
 
+@SuppressWarnings("unused")
 public class Transform {
 
     private int posX;

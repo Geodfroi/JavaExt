@@ -1,29 +1,26 @@
 package ch.azure.aurore.javaxt.reflection;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
-import java.lang.reflect.ParameterizedType;
-import java.util.Arrays;
 
 public enum FieldType {
     BOOLEAN("NUMERIC"), BYTE("NUMERIC"), CHAR("TEXT"), DOUBLE("REAL"),
     FLOAT("REAL"), INT("INTEGER"), LONG("INTEGER"), SHORT("INTEGER"),
     STRING("TEXT"), OBJECT("TEXT"),
-    ARRAY_BYTES("BLOB"), ARRAY("TEXT"), LIST("TEXT"), MAP("TEXT"), SET("TEXT");
+    ARRAY_BOOLEANS("TEXT"), ARRAY_BYTES("BLOB"), ARRAY_CHARS("TEXT"), ARRAY_DOUBLES("TEXT"),
+    ARRAY_FLOATS("TEXT"), ARRAY_INTEGERS("TEXT"), ARRAY_LONGS("TEXT"), ARRAY_SHORTS("TEXT"),
+    ARRAY_STRINGS("TEXT"), ARRAY_OBJECTS("TEXT"),
+    LIST("TEXT"),
+    MAP("TEXT"),
+    SET("TEXT");
 
     private final String _SQLType;
-    private Class<?>[] typeParameters;
-    private Field field;
 
     FieldType(String SQLType) {
         this._SQLType = SQLType;
     }
 
     public static FieldType getFieldType(Field field) {
-
         FieldType val;
-        Class<?>[] typeParameters = new Class[0];
-
         switch (field.getType().getSimpleName()) {
             case "boolean":
             case "Boolean":
@@ -31,8 +28,7 @@ public enum FieldType {
                 break;
             case "boolean[]":
             case "Boolean[]":
-                val = ARRAY;
-                typeParameters = new Class[]{boolean.class};
+                val = ARRAY_BOOLEANS;
                 break;
             case "byte":
             case "Byte":
@@ -41,7 +37,6 @@ public enum FieldType {
             case "byte[]":
             case "Byte[]":
                 val = ARRAY_BYTES;
-                typeParameters = new Class[]{byte.class};
                 break;
             case "char":
             case "Character":
@@ -49,8 +44,7 @@ public enum FieldType {
                 break;
             case "char[]":
             case "Character[]":
-                val = ARRAY;
-                typeParameters = new Class[]{char.class};
+                val = ARRAY_CHARS;
                 break;
             case "double":
             case "Double":
@@ -58,8 +52,7 @@ public enum FieldType {
                 break;
             case "double[]":
             case "Double[]":
-                val = ARRAY;
-                typeParameters = new Class[]{double.class};
+                val = ARRAY_DOUBLES;
                 break;
             case "float":
             case "Float":
@@ -67,8 +60,7 @@ public enum FieldType {
                 break;
             case "float[]":
             case "Float[]":
-                val = ARRAY;
-                typeParameters = new Class[]{float.class};
+                val = ARRAY_FLOATS;
                 break;
             case "int":
             case "Integer":
@@ -76,11 +68,9 @@ public enum FieldType {
                 break;
             case "int[]":
             case "Integer[]":
-                val = ARRAY;
-                typeParameters = new Class[]{int.class};
+                val = ARRAY_INTEGERS;
                 break;
             case "List":
-                typeParameters = getTypeParameters(field);
                 val = LIST;
                 break;
             case "long":
@@ -89,15 +79,12 @@ public enum FieldType {
                 break;
             case "long[]":
             case "Long[]":
-                val = ARRAY;
-                typeParameters = new Class[]{long.class};
+                val = ARRAY_LONGS;
                 break;
             case "Map":
-                typeParameters = getTypeParameters(field);
                 val = MAP;
                 break;
             case "Set":
-                typeParameters = getTypeParameters(field);
                 val = SET;
                 break;
             case "short":
@@ -106,55 +93,23 @@ public enum FieldType {
                 break;
             case "short[]":
             case "Short[]":
-                val = ARRAY;
-                typeParameters = new Class[]{short.class};
+                val = ARRAY_SHORTS;
                 break;
             case "String":
                 val = STRING;
                 break;
             case "String[]":
-                val = ARRAY;
-                typeParameters = new Class[]{String.class};
+                val = ARRAY_STRINGS;
                 break;
             default:
                 val = OBJECT;
                 break;
         }
-        val.setField(field);
-        val.setParameters(typeParameters);
         return val;
-    }
-
-
-    private static Class<?>[] getTypeParameters(Field field) {
-        ParameterizedType stringListType = (ParameterizedType) field.getGenericType();
-        return Arrays.stream(stringListType.getActualTypeArguments()).
-                map(type -> (Class<?>) type).
-                toArray(Class<?>[]::new);
     }
 
     public String get_SQLType() {
         return _SQLType;
-    }
-
-    private void setField(Field field) {
-        this.field = field;
-    }
-
-    public Class<?>[] getTypeParameters() {
-        return typeParameters;
-    }
-
-    private void setParameters(Class<?>[] typeParameters) {
-        this.typeParameters = typeParameters;
-    }
-
-    public Class<?> getType() {
-        return field.getType();
-    }
-
-    public boolean isAnnotationPresent(Class<? extends Annotation> clazz) {
-        return field.isAnnotationPresent(clazz);
     }
 
     public boolean isPrimitiveOrString() {
@@ -172,18 +127,27 @@ public enum FieldType {
             case BYTE:
             case SHORT:
                 return true;
+            case ARRAY_BOOLEANS:
             case OBJECT:
             case STRING:
             case MAP:
             case LIST:
-            case ARRAY:
             case ARRAY_BYTES:
+            case ARRAY_INTEGERS:
+            case ARRAY_FLOATS:
+            case ARRAY_DOUBLES:
             case SET:
+            case ARRAY_CHARS:
+            case ARRAY_LONGS:
+            case ARRAY_SHORTS:
+            case ARRAY_STRINGS:
+            case ARRAY_OBJECTS:
                 return false;
             default:
                 throw new IllegalStateException("Unexpected value: " + this);
         }
     }
+
     public boolean isCollectionOrMap() {
         return this.equals(MAP) || isCollection();
     }
@@ -202,10 +166,18 @@ public enum FieldType {
             case MAP:
             case BYTE:
                 return false;
+            case ARRAY_BOOLEANS:
+            case ARRAY_CHARS:
+            case ARRAY_DOUBLES:
+            case ARRAY_FLOATS:
+            case ARRAY_INTEGERS:
+            case ARRAY_LONGS:
+            case ARRAY_SHORTS:
+            case ARRAY_STRINGS:
+            case ARRAY_OBJECTS:
             case ARRAY_BYTES:
             case LIST:
             case SET:
-            case ARRAY:
                 return true;
             default:
                 throw new IllegalStateException("Unexpected value: " + this);
@@ -214,5 +186,38 @@ public enum FieldType {
 
     public boolean isMap() {
         return this.equals(MAP);
+    }
+
+    public boolean isArray() {
+
+        switch (this) {
+            case BOOLEAN:
+            case BYTE:
+            case CHAR:
+            case DOUBLE:
+            case FLOAT:
+            case INT:
+            case LONG:
+            case SHORT:
+            case STRING:
+            case OBJECT:
+            case LIST:
+            case SET:
+            case MAP:
+                return false;
+            case ARRAY_BOOLEANS:
+            case ARRAY_BYTES:
+            case ARRAY_CHARS:
+            case ARRAY_DOUBLES:
+            case ARRAY_FLOATS:
+            case ARRAY_INTEGERS:
+            case ARRAY_LONGS:
+            case ARRAY_SHORTS:
+            case ARRAY_STRINGS:
+            case ARRAY_OBJECTS:
+                return true;
+            default:
+                throw new IllegalStateException("Unexpected value: " + this);
+        }
     }
 }

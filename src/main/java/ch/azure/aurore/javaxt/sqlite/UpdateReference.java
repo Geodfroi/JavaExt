@@ -5,8 +5,8 @@ import ch.azure.aurore.javaxt.json.API.JSON;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class UpdateReference extends InsertData {
 
@@ -28,48 +28,59 @@ public class UpdateReference extends InsertData {
                 statement.setString(getIndex(), txt);
                 break;
             case ONE_TO_MANY_COLLECTION:
-                List<DatabaseRef> list = getFieldData().getRelationIDs(value).getList();
+                List<DatabaseRef> list = getFieldData().getCollectionIDs(value).getList();
                 if (list.size() == 0)
                     statement.setObject(getIndex(), null);
-                txt = JSON.toJSON(list);
-                statement.setString(getIndex(), txt);
+                else {
+                    txt = JSON.toJSON(list);
+                    statement.setString(getIndex(), txt);
+                }
                 break;
             case ONE_TO_MANY_MAP:
+                @SuppressWarnings("rawtypes")
+                Map map = getFieldData().getMapIDs(value).getMap();
+                if (map.size() == 0)
+                    statement.setObject(getIndex(), null);
+                else {
+                    txt = JSON.toJSON(map);
+                    statement.setString(getIndex(), txt);
+                }
                 break;
             default:
                 throw new IllegalStateException("Unexpected value: " + getFieldData().getRelationship());
         }
     }
 
-    public void forwardReference(SQLiteImplementation sqLite, Object data, List<Object> trace0) {
+    public void forwardReference(SQLiteImplementation sqLite, Object data, QueryTrace trace) {
 
-        boolean canForward = !trace0.contains(data);
+        boolean canForward = !trace.contains(data);
 
         Object fieldValue = getFieldData().getFieldValue(data);
         if (fieldValue == null || !canForward)
             return;
 
-        List<Object> trace1 = new ArrayList<>(trace0);
-        trace1.add(data);
+        trace.add(data);
 
         switch (getFieldData().getRelationship()) {
 
             case NONE:
                 break;
             case ONE_TO_ONE:
-                sqLite.updateItem(fieldValue, trace1);
+                sqLite.updateItem(fieldValue, trace);
                 break;
             case ONE_TO_MANY_COLLECTION:
-                List<Object> i = Generics.getCollectionFromField(fieldValue); //.stream().filter(obj -> !trace.contains(obj)).collect(Collectors.toList());
-                if (i.size() == 0)
-                    return;
-                for (Object obj : i) {
-                    if (!sqLite.updateItem(obj, trace1))
+                for (Object obj : Generics.getCollectionFromField(fieldValue)) {
+                    if (!sqLite.updateItem(obj, trace))
                         return;
                 }
                 break;
             case ONE_TO_MANY_MAP:
-                throw new IllegalStateException("Unexpected value: " + getFieldData().getRelationship());
+                //noinspection rawtypes
+                for (Object obj : ((Map) fieldValue).values()) {
+                    if (!sqLite.updateItem(obj, trace))
+                        return;
+                }
+                break;
 
             default:
                 throw new IllegalStateException("Unexpected value: " + getFieldData().getRelationship());

@@ -1,21 +1,17 @@
 package ch.azure.aurore.javaxt.sqlite;
 
-import ch.azure.aurore.javaxt.sqlite.wrapper.annotations.DatabaseClass;
+import ch.azure.aurore.javaxt.sqlite.wrapper.SQLiteData;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 @SuppressWarnings("unused")
-@DatabaseClass
-public class GameObject {
 
-    private int _id;
+public class GameObject extends SQLiteData {
+
     private String name;
-    private boolean _modified = true;
     private double[] pos = new double[0];
-
-    private byte[] image;
 
     private Transform tr = new Transform();
 
@@ -24,6 +20,7 @@ public class GameObject {
     private List<Enemy> enemies = new ArrayList<>();
 
     private Attack[] attacks;
+    private World world;
 
     public Attack[] getAttacks() {
         if (attacks == null)
@@ -32,8 +29,9 @@ public class GameObject {
         return Arrays.copyOf(attacks, attacks.length);
     }
 
-    public byte[] getImage() {
-        return image;
+    public void setAttacks(Attack[] attacks) {
+        this.attacks = attacks;
+        set_modified(true);
     }
 
     public List<Enemy> getEnemies() {
@@ -44,16 +42,6 @@ public class GameObject {
         this.enemies = enemies;
     }
 
-    public void setImage(byte[] image) {
-        this.image = image;
-        _modified = true;
-    }
-
-    public void setAttacks(Attack[] attacks) {
-        this.attacks = attacks;
-        _modified = true;
-    }
-
     public double[] getPos() {
         return pos;
     }
@@ -62,18 +50,13 @@ public class GameObject {
         this.pos = pos;
     }
 
-    private World world;
-
-    public int get_id() {
-        return _id;
-    }
-
     public Transform getTr() {
         return tr;
     }
 
-    public void set_id(int _id) {
-        this._id = _id;
+    public void setTr(Transform tr) {
+        this.tr = tr;
+        set_modified(true);
     }
 
     public String getName() {
@@ -84,20 +67,14 @@ public class GameObject {
         this.name = name;
     }
 
-    public void setTr(Transform tr) {
-        this.tr = tr;
-        _modified = true;
-    }
-
     public List<String> getTags() {
         return tags;
     }
 
     public void setTags(List<String> tags) {
         this.tags = tags;
-        _modified = true;
+        set_modified(true);
     }
-
 
     public World getWorld() {
         return world;
@@ -105,14 +82,6 @@ public class GameObject {
 
     public void setWorld(World world) {
         this.world = world;
-        _modified = true;
-    }
-
-    public boolean is_modified() {
-        return _modified;
-    }
-
-    public void set_modified(boolean _modified) {
-        this._modified = _modified;
+        set_modified(true);
     }
 }

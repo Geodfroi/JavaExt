@@ -1,15 +1,14 @@
 package ch.azure.aurore.javaxt.sqlite;
 
+import ch.azure.aurore.javaxt.sqlite.wrapper.SQLite;
+import ch.azure.aurore.javaxt.sqlite.wrapper.SQLiteData;
 import ch.azure.aurore.javaxt.sqlite.wrapper.annotations.DatabaseClass;
 
 @DatabaseClass
-public class Attack {
+public class Attack extends SQLiteData {
 
-    private int _id;
     private String name;
     private int _APCost;
-
-    private boolean _modified;
 
     public Attack(){
     }
@@ -24,24 +23,9 @@ public class Attack {
         return name;
     }
 
-    public boolean is_modified() {
-        return _modified;
-    }
-
-    public void set_modified(boolean _modified) {
-        this._modified = _modified;
-    }
-
     public void setName(String name) {
         this.name = name;
-    }
-
-    public int get_id() {
-        return _id;
-    }
-
-    public void set_id(int _id) {
-        this._id = _id;
+        setAsModified();
     }
 
     public int get_APCost() {
@@ -50,5 +34,6 @@ public class Attack {
 
     public void set_APCost(int _APCost) {
         this._APCost = _APCost;
+        setAsModified();
     }
 }

@@ -10,7 +10,6 @@ import ch.azure.aurore.javaxt.sqlite.wrapper.annotations.DatabaseClass;
 import ch.azure.aurore.javaxt.sqlite.wrapper.annotations.DatabaseName;
 import ch.azure.aurore.javaxt.strings.Strings;
 
-import java.lang.reflect.Array;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
@@ -19,40 +18,49 @@ public class FieldData {
 
     private static final String ID_FIELD = "id";
 
-    private final FieldInfo f;
+    private final FieldInfo fieldInfo;
     private Relationship relationship = Relationship.NONE;
     private String columnName;
     private boolean convertToJSON;
     private FieldInfo relationFieldID;
 
     public FieldData(FieldInfo f) {
-        this.f = f;
+        this.fieldInfo = f;
         DatabaseName fieldAnnotation = f.getAnnotationIfPresent(DatabaseName.class);
         this.columnName = fieldAnnotation == null ? f.getName() : (Strings.isNullOrEmpty(fieldAnnotation.value()) ? f.getName() : fieldAnnotation.value());
 
-        FieldType ffieldType = getFieldType();
-        if (ffieldType.isPrimitiveOrString() || ffieldType == FieldType.ARRAY_BYTES)
+        if (columnName.equals("world")){
+            System.out.println("huh");
+        }
+
+        FieldType fieldType = getFieldType();
+        if (fieldType.isPrimitiveOrString() || fieldType == FieldType.ARRAY_BYTES)
             return;
 
-        if (ffieldType.isAnnotationPresent(DatabaseClass.class)) {
+        if (Reflection.isAnnotationPresent(fieldInfo.getType(), DatabaseClass.class)){ //fieldType.isAnnotationPresent(DatabaseClass.class)) {
             relationship = Relationship.ONE_TO_ONE;
             columnName += "_ID";
             relationFieldID = getRelationFieldID(f.getType());
             return;
         }
 
-        if (ffieldType.isCollection()){
-            if (ffieldType.getTypeParameters()[0].isAnnotationPresent(DatabaseClass.class)) {
+        if (fieldType.isCollection()) {
+            if (Reflection.isAnnotationPresent(fieldInfo.getTypeParameters()[0], DatabaseClass.class)) {
                 relationship = Relationship.ONE_TO_MANY_COLLECTION;
                 columnName += "_IDs";
-                relationFieldID = getRelationFieldID(ffieldType.getTypeParameters()[0]);
+                relationFieldID = getRelationFieldID(fieldInfo.getTypeParameters()[0]);
                 return;
             }
         }
-        if (ffieldType.isMap()){
-            if (ffieldType.getTypeParameters()[1].isAnnotationPresent(DatabaseClass.class)) {
+
+        if (fieldType.isMap()) {
+            if (Reflection.isAnnotationPresent(fieldInfo.getTypeParameters()[0], DatabaseClass.class))
+                throw new IllegalStateException("[" + fieldInfo.getTypeParameters()[0].getSimpleName() + "] object marked as [DatabaseClass] cannot be a map key");
+            if (Reflection.isAnnotationPresent(fieldInfo.getTypeParameters()[1], DatabaseClass.class)) {
                 relationship = Relationship.ONE_TO_MANY_MAP;
-                throw new IllegalStateException("not implemented");
+                columnName += "_IDs";
+                relationFieldID = getRelationFieldID(fieldInfo.getTypeParameters()[1]);
+                return;
             }
         }
 
@@ -72,8 +80,12 @@ public class FieldData {
         return columnName;
     }
 
+    public FieldType getFieldType() {
+        return fieldInfo.getFieldType();
+    }
+
     public String getName() {
-        return f.getName();
+        return fieldInfo.getName();
     }
 
     public Relationship getRelationship() {
@@ -84,13 +96,36 @@ public class FieldData {
         return getFieldType().get_SQLType();
     }
 
+    public FieldInfo getFieldInfo() {
+        return fieldInfo;
+    }
+
     //endregion
 
     public int getRelationId(Object fieldValue) {
         return (int) relationFieldID.getAccessor().invoke(fieldValue);
     }
 
-    IDsResult getRelationIDs(Object fieldValue) {
+    IDsMap getMapIDs(Object fieldValue) {
+        boolean hasZero = false;
+        HashMap<Object, DatabaseRef> resMap = new HashMap<>();
+        if (!Map.class.isAssignableFrom(fieldValue.getClass()))
+            throw new IllegalStateException("Invalid [getMapIDs] method called on [" + fieldValue + "] field value");
+
+        @SuppressWarnings("unchecked")
+        Map<Object, Object> map = (Map<Object, Object>) fieldValue;
+        for (Object key : map.keySet()) {
+            Object value = map.get(key);
+            int id = getRelationId(value);
+            resMap.put(key, new DatabaseRef(id, value.getClass().getName()));
+            if (id == 0)
+                hasZero = true;
+        }
+
+        return new IDsMap(hasZero, resMap);
+    }
+
+    IDsCollection getCollectionIDs(Object fieldValue) {
         List<DatabaseRef> list = new ArrayList<>();
         boolean hasZero = false;
 
@@ -101,45 +136,44 @@ public class FieldData {
                 hasZero = true;
         }
 
-        return new IDsResult(hasZero, list);
+        return new IDsCollection(hasZero, list);
     }
 
     public String getReferenceStr(int id) {
-        DatabaseRef r = new DatabaseRef(id, relationFieldID.getDeclaringClass().getName());
+        DatabaseRef r = new DatabaseRef(id, fieldInfo.getType().getName());
         return JSON.toJSON(r);
     }
 
     public Object getFieldValue(Object data) {
-        return f.getAccessor().invoke(data);
+        return fieldInfo.getAccessor().invoke(data);
     }
 
     public InsertData prepareInsert(int i, Object data, InsertOperation insertOperation) {
 
         Object val = getFieldValue(data);
-        if (val == null)
+        if (val == null || insertOperation == InsertOperation.INSERT_FOR_NEW_ENTRY)
             return new InsertField(this, i, null, "setObject");
+
+//        if (insertOperation == InsertOperation.INSERT_FOR_NEW_ENTRY)
+//            return new InsertField(this, i, null, "setObject");
 
         if (convertToJSON)
             return new InsertField(this, i, JSON.toJSON(val), "setString");
 
-        if (relationship == Relationship.NONE) {
-            switch (getFieldType().get_SQLType()) {
-                case "BLOB":
-                    return new InsertField(this, i, val, "setBytes");
-                case "INTEGER":
-                    return new InsertField(this, i, val, "setInt");
-                case "TEXT":
-                    return new InsertField(this, i, val, "setString");
-                default:
-                    break;
-            }
-            throw new IllegalStateException("Can't insert value in database for [" + getFieldType().get_SQLType() + "] SQL type in [setStatement] method");
-        }
-
-        if (insertOperation == InsertOperation.INSERT_FOR_NEW_ENTRY)
-            return new InsertField(this, i, null, "setObject");
-
         switch (relationship) {
+            case NONE:
+                switch (getFieldType().get_SQLType()) {
+                    case "BLOB":
+                        return new InsertField(this, i, val, "setBytes");
+                    case "INTEGER":
+                        return new InsertField(this, i, val, "setInt");
+                    case "TEXT":
+                        return new InsertField(this, i, val, "setString");
+                    default:
+                        break;
+                }
+                throw new IllegalStateException("Can't insert value in database for [" + getFieldType().get_SQLType() + "] SQL type in [setStatement] method");
+
             case ONE_TO_ONE:
                 int linkID = getRelationId(val);
                 if (linkID != 0) {
@@ -149,32 +183,62 @@ public class FieldData {
                     return new UpdateReference(this, i);
 
             case ONE_TO_MANY_COLLECTION:
-                IDsResult r = getRelationIDs(val);
-                if (r.getList().size() == 0)
+                IDsCollection result = getCollectionIDs(val);
+                if (result.getList().size() == 0)
                     return new InsertField(this, i, null, "setObject");
-                if (r.AreAllIDsSet())
-                    return new InsertField(this, i, JSON.toJSON(r.getList()), "setString");
+                if (result.AreAllIDsSet())
+                    return new InsertField(this, i, JSON.toJSON(result.getList()), "setString");
 
+                return new UpdateReference(this, i);
+            case ONE_TO_MANY_MAP:
+                var mapResult = getMapIDs(val);
+                if (mapResult.getMap().size() == 0)
+                    return new InsertField(this, i, null, "setObject");
+                if (mapResult.AreAllIDsSet())
+                    return new InsertField(this, i, JSON.toJSON(mapResult.getMap()), "setString");
                 return new UpdateReference(this, i);
             default:
                 throw new IllegalStateException("Unexpected value: " + relationship);
         }
     }
 
-    public void setCollectionValue(List<Object> collection, Object data) {
-        if (f.getType().isArray()) {
-            Object array = Array.newInstance(f.getFieldType().getTypeParameters()[0], collection.size());
-            for (int n = 0; n < collection.size(); n++) {
-                Array.set(array, n, collection.get(n));
-            }
-            f.getMutator().invoke(data, array);
+    public PullData preparePull(ResultSet resultSet, int n) throws SQLException {
+        if (fieldInfo == null)
+            return null;
+        String txt;
+        switch (relationship) {
+            case NONE:
+                return new PullField(this, resultSet, n);
+            case ONE_TO_ONE:
+                txt = resultSet.getString(n);
+                if (!Strings.isNullOrEmpty(txt)) {
+                    DatabaseRef rf = JSON.readObjectValue(DatabaseRef.class, txt);
+                    return new PullReference(this, rf);
+                }
+                return new PullReference(this);
+            case ONE_TO_MANY_COLLECTION:
+                txt = resultSet.getString(n);
+                if (!Strings.isNullOrEmpty(txt)) {
+                    List<DatabaseRef> list = JSON.readList(DatabaseRef.class, txt);
+                    return new PullReference(this, list);
+                }
+                return new PullReference(this);
 
-        } else if (Collection.class.isAssignableFrom(f.getType()))
-            f.getMutator().invoke(data, collection);
+            case ONE_TO_MANY_MAP:
+                txt = resultSet.getString(n);
+                if (!Strings.isNullOrEmpty(txt)) {
+                    var map = JSON.readMap(Object.class, DatabaseRef.class, txt);
+                    return new PullReference(this, map);
+                }
+                return new PullReference(this);
+            default:
+                break;
+        }
+        throw new IllegalStateException("Unexpected value: " + relationship);
     }
 
     public void setValue(Object obj, Object val) {
-        f.getMutator().invoke(obj, val);
+        fieldInfo.getMutator().invoke(obj, val);
     }
 
     @Override
@@ -184,51 +248,19 @@ public class FieldData {
                 '}';
     }
 
-    public PullData preparePull(ResultSet resultSet, int n) throws SQLException {
-        if (f == null)
-            return null;
-
-        switch (relationship) {
-            case NONE:
-                return new PullField(this, resultSet, n);
-            case ONE_TO_ONE:
-                String txt = resultSet.getString(n);
-                if (!Strings.isNullOrEmpty(txt)) {
-                    DatabaseRef rf = JSON.readValue(DatabaseRef.class, txt);
-                    return new PullReference(this, rf);
-                }
-                return new PullReference(this);
-            case ONE_TO_MANY_COLLECTION:
-                String arrayTxt = resultSet.getString(n);
-                if (!Strings.isNullOrEmpty(arrayTxt)) {
-                    List<DatabaseRef> list = JSON.readList(DatabaseRef.class, arrayTxt);
-                    return new PullReference(this, list);
-                }
-                return new PullReference(this);
-            default:
-                break;
-        }
-        throw new IllegalStateException("Unexpected value: " + relationship);
-    }
-
-    public FieldType getFieldType() {
-        return f.getFieldType();
-    }
-
     public enum InsertOperation {
         INSERT_FOR_NEW_ENTRY,
         INSERT_FOR_UPDATE,
     }
 }
 
-class IDsResult {
+class IDsCollection {
 
     private final boolean hasZero;
     private final List<DatabaseRef> list;
 
-    public IDsResult(boolean hasZero, List<DatabaseRef> list) {
+    public IDsCollection(boolean hasZero, List<DatabaseRef> list) {
         this.hasZero = hasZero;
-
         this.list = list;
     }
 
@@ -238,5 +270,24 @@ class IDsResult {
 
     public List<DatabaseRef> getList() {
         return list;
+    }
+}
+
+class IDsMap {
+    private final Boolean hasZero;
+    private final Map<Object, DatabaseRef> map;
+
+    public IDsMap(Boolean hasZero, Map<Object, DatabaseRef> map) {
+
+        this.hasZero = hasZero;
+        this.map = map;
+    }
+
+    public boolean AreAllIDsSet() {
+        return !hasZero;
+    }
+
+    public Map<Object, DatabaseRef> getMap() {
+        return map;
     }
 }

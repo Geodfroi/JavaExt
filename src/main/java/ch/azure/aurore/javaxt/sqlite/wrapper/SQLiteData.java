@@ -25,4 +25,9 @@ public abstract class SQLiteData {
     public void set_modified(boolean _modified) {
         this._modified = _modified;
     }
+
+    public void setAsModified(){
+        this._modified = true;
+    }
+
 }

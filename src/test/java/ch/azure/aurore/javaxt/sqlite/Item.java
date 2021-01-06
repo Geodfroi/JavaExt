@@ -1,17 +1,17 @@
 package ch.azure.aurore.javaxt.sqlite;
 
+import ch.azure.aurore.javaxt.sqlite.wrapper.SQLiteData;
 import ch.azure.aurore.javaxt.sqlite.wrapper.annotations.DatabaseClass;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @DatabaseClass
-public class Item {
-    private int _id;
-    private boolean _modified;
+public class Item extends SQLiteData {
     private String name;
+    private List<Link> links = new ArrayList<>();
 
-    public Item(){
+    public Item() {
     }
 
     public Item(String name) {
@@ -24,32 +24,17 @@ public class Item {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    private List<Link> links = new ArrayList<>();
-
-    public int get_id() {
-        return _id;
-    }
-
-    public void set_id(int _id) {
-        this._id = _id;
-    }
-
-    public boolean is_modified() {
-        return _modified;
-    }
-
-    public void set_modified(boolean _modified) {
-        this._modified = _modified;
+        setAsModified();
     }
 
     public List<Link> getLinks() {
         return links;
     }
 
+    @SuppressWarnings("unused")
     public void setLinks(List<Link> links) {
         this.links = links;
+        setAsModified();
     }
 
     @Override

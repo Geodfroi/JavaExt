@@ -27,7 +27,7 @@ public abstract class AppState {
                 throw new IllegalStateException("Failed to instantiate [" + clazz.getSimpleName() + "] AppState");
             }
         } else
-            item = JSON.readValue(clazz, str);
+            item = JSON.readObjectValue(clazz, str);
 
         if (item == null)
             throw new IllegalStateException("Error loading AppState");

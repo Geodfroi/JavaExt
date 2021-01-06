@@ -144,6 +144,8 @@ public class SQLiteImplementation {
 
         try {
             for (FieldData f : fieldsData.getFields()) {
+                if (insertCount == 7)
+                    System.out.println(insertCount);
                 InsertField operation = (InsertField) f.prepareInsert(insertCount++, data, FieldData.InsertOperation.INSERT_FOR_NEW_ENTRY);
                 operation.execute(statement, data);
             }
@@ -170,10 +172,10 @@ public class SQLiteImplementation {
 
     /**
      * @param data  update data;
-     * @param trace0 list of previously updated items with the current public update query; used to avoid circular update calls.
+     * @param trace list of previously updated items with the current public update query; used to avoid circular update calls.
      * @return return true if update is successful.
      */
-    public boolean updateItem(Object data, List<Object> trace0) {
+    public boolean updateItem(Object data, QueryTrace trace) {
 
         FieldsData fieldsData = loadFieldsData(data.getClass());
         if (getMetadata().isMissing(fieldsData.getClassName())) {
@@ -201,7 +203,7 @@ public class SQLiteImplementation {
             inserts.add(i);
 
             if (i instanceof UpdateReference) {
-                ((UpdateReference) i).forwardReference(this, data, trace0);
+                ((UpdateReference) i).forwardReference(this, data, trace);
                 isModified = true;
             }
         }

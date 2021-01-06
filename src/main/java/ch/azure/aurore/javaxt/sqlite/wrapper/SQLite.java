@@ -1,5 +1,6 @@
 package ch.azure.aurore.javaxt.sqlite.wrapper;
 
+import ch.azure.aurore.javaxt.sqlite.QueryTrace;
 import ch.azure.aurore.javaxt.sqlite.SQLiteImplementation;
 
 import java.nio.file.Path;
@@ -72,7 +73,7 @@ public class SQLite {
     public boolean updateItems(Object... args) {
         boolean allUpdated = true;
         for (Object data: args) {
-            if (!implementation.updateItem(data, new ArrayList<>()))
+            if (!implementation.updateItem(data, new QueryTrace()))
                 allUpdated = false;
         }
         return allUpdated;
@@ -84,7 +85,7 @@ public class SQLite {
      * @return return true if update is successful.
      */
     public boolean updateItem(Object data) {
-        return implementation.updateItem(data, new ArrayList<>());
+        return implementation.updateItem(data, new QueryTrace());
     }
 }
 

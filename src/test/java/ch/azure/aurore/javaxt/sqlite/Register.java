@@ -1,17 +1,20 @@
 package ch.azure.aurore.javaxt.sqlite;
 
+import ch.azure.aurore.javaxt.sqlite.wrapper.SQLiteData;
+
 import java.util.HashMap;
 import java.util.Map;
 
-public class Register {
 
-    private Map<Integer, Employee> table = new HashMap<>();
+public class Register extends SQLiteData {
 
-    public Map<Integer, Employee> getTable() {
-        return table;
+    private Map<Integer, Employee> entries = new HashMap<>();
+
+    public Map<Integer, Employee> getEntries() {
+        return entries;
     }
 
-    public void setTable(Map<Integer, Employee> table) {
-        this.table = table;
+    public void setEntries(Map<Integer, Employee> entries) {
+        this.entries = entries;
     }
 }
