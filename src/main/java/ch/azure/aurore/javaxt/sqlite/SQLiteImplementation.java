@@ -226,6 +226,13 @@ public class SQLiteImplementation {
         return true;
     }
 
+    public <T> T queryItem(Class<T> clazz) {
+        List<T> collection = queryItems(clazz);
+        if (collection != null && collection.size() > 0)
+            return collection.get(0);
+        return null;
+    }
+
     public <T> T queryItem(Class<T> clazz, int id) {
 
         T obj = fetchReferencedObject(clazz, id);
@@ -251,6 +258,9 @@ public class SQLiteImplementation {
             if (resultSet.next()) {
                 for (int n = 2; n < md.getColumnCount() + 1; n++) {
                     FieldData f = fieldsData.getField(md.getColumnName(n));
+                    if (f == null)
+                        continue;
+
                     PullData p = f.preparePull(resultSet, n);
                     if (p != null)
                         pulls.add(p);
@@ -284,7 +294,7 @@ public class SQLiteImplementation {
     public <T> List<T> queryItems(Class<T> clazz) {
         FieldsData fieldsData = loadFieldsData(clazz);
         if (failChecks(fieldsData))
-            return null;
+            return new ArrayList<>();
 
         SQLiteHelper.checkStatement(conn, fieldsData, queryAllStatements, clazz, SQLiteHelper::composeQueryAllStatement);
         PreparedStatement statement = queryAllStatements.get(clazz);

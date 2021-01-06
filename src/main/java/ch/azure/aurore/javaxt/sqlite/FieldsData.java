@@ -7,6 +7,7 @@ import ch.azure.aurore.javaxt.reflection.Reflection;
 import ch.azure.aurore.javaxt.sqlite.wrapper.annotations.DBPack;
 import ch.azure.aurore.javaxt.sqlite.wrapper.annotations.DBUnpack;
 import ch.azure.aurore.javaxt.sqlite.wrapper.annotations.DatabaseClass;
+import ch.azure.aurore.javaxt.sqlite.wrapper.annotations.DatabaseIgnore;
 import ch.azure.aurore.javaxt.strings.Strings;
 
 import java.util.ArrayList;
@@ -29,18 +30,14 @@ public class FieldsData {
     private FieldInfo modifiedField;
 
     public FieldsData(Class<?> aClass) {
-        if (!aClass.isAnnotationPresent(DatabaseClass.class)) {
-            throw new IllegalStateException("Class [" + aClass.getSimpleName() + "] must have [DatabaseClass] annotation to be imported into database");
-        }
-        ClassInfo classInfo = Reflection.getInfo(aClass);
-
         this.className = FieldsData.getClassDBName(aClass);
+        ClassInfo classInfo = Reflection.getInfo(aClass);
 
         if (!classInfo.hasAccessibleConstructor())
             throw new RuntimeException("Class [" + aClass.getSimpleName() + "] does not contains a public parameterless constructor");
 
         for (FieldInfo f : classInfo.getFields()) {
-            if (!f.hasAccessor() || !f.hasMutator() || f.isIgnored())
+            if (!f.hasAccessor() || !f.hasMutator() || f.isAnnotationPresent(DatabaseIgnore.class))
                 continue;
 
             if (f.isNamed(ID_FIELD))
@@ -63,8 +60,11 @@ public class FieldsData {
     }
 
     public static String getClassDBName(Class<?> aClass) {
-        DatabaseClass annotation = aClass.getAnnotation(DatabaseClass.class);
-        return Strings.isNullOrEmpty(annotation.dbName()) ? aClass.getSimpleName() : annotation.dbName();
+        DatabaseClass annotation = Reflection.getAnnotation(aClass, DatabaseClass.class);
+        if (annotation != null)
+            return Strings.isNullOrEmpty(annotation.dbName()) ? aClass.getSimpleName() : annotation.dbName();
+
+        throw new IllegalStateException("Class [" + aClass.getSimpleName() + "] must have [DatabaseClass] annotation to be imported into database");
     }
 
     //region accessors
@@ -89,7 +89,7 @@ public class FieldsData {
     }
 
     public int getID(Object data) {
-        return (int)idField.getFieldValue(data);
+        return (int) idField.getFieldValue(data);
     }
 
     public boolean isModified(Object data) {

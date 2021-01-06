@@ -15,19 +15,19 @@ class GenericsTest {
 
     @Test
     public void getComponentType_list() {
-        Class<?> type = Generics.getComponentType(GenericsTest.class, "strList");
-        Assertions.assertEquals(String.class, type);
+        Class<?>[] type = Generics.getComponentType(GenericsTest.class, "strList");
+        assert type != null && type[0].equals(String.class);
     }
 
     @Test
     public void getComponentType_null() {
-        Class<?> type = Generics.getComponentType(GenericsTest.class, "don'tExist");
-        Assertions.assertNull(type);
+        Class<?>[] type = Generics.getComponentType(GenericsTest.class, "don'tExist");
+        assert type != null && type.length == 0;
     }
 
     @Test
     public void getComponentType_array() {
-        Class<?> type = Generics.getComponentType(GenericsTest.class, "intArray");
-        Assertions.assertEquals(int.class, type);
+        Class<?>[] type = Generics.getComponentType(GenericsTest.class, "intArray");
+        assert type != null && type[0].equals(int.class);
     }
 }

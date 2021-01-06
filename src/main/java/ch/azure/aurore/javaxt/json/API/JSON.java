@@ -2,8 +2,10 @@ package ch.azure.aurore.javaxt.json.API;
 
 import ch.azure.aurore.javaxt.strings.Strings;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
+import com.fasterxml.jackson.databind.type.MapType;
 
 import java.io.IOException;
 import java.util.*;
@@ -41,6 +43,18 @@ public class JSON {
 
             // for array or values
             return mapper.readValue(str, clazz);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static <TKey, TValue> Map<TKey, TValue> readMap(Class<TKey> type0, Class<TValue> type1, String str) {
+
+        MapType javaType = mapper.getTypeFactory()
+                .constructMapType(Map.class, type0, type1);
+        try {
+            return mapper.readValue(str, javaType);
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         }

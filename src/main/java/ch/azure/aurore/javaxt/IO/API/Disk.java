@@ -26,6 +26,7 @@ public class Disk {
      * @param filename a file path as string;
      * @return returns the extension including the \. character IE ".txt"; returns an empty optional if fileName parameter doesn't contain a \. character;
      */
+    @Deprecated
     public static Optional<String> getExtension(String filename) {
         return Optional.ofNullable(filename)
                 .filter(f -> f.contains("."))
@@ -52,8 +53,8 @@ public class Disk {
         if (!Files.exists(path1) || !Files.isRegularFile(path1))
             return false;
 
-        Optional<String> extValue = Disk.getExtension(pathStr);
-        if (extValue.isEmpty()) {
+        FileExtension ext = FileExtension.getExtension(pathStr);
+        if (ext == FileExtension.UNDEFINED) {
             System.out.println("backup failed : Can't get file extension");
             return false;
         }
@@ -72,14 +73,14 @@ public class Disk {
             e.printStackTrace();
         }
 
-        String copyName = fileNameWithoutExt + "_" + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyLLdd")) + extValue.get();
+        String copyName = fileNameWithoutExt + "_" + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyLLdd")) + ext.toString();
         Path destination = backupPath.resolve(copyName);
 
         try {
             Files.copy(path1, destination, StandardCopyOption.REPLACE_EXISTING);
 
             // identify with regex then sort from newest to oldest
-            Pattern pattern = Pattern.compile("^" + fileNameWithoutExt + "_(\\d{8})" + extValue.get() + "$");
+            Pattern pattern = Pattern.compile("^" + fileNameWithoutExt + "_(\\d{8})" + ext.toString() + "$");
 
             List<Path> backedFiles = Files.list(backupPath).
                     map(f -> new ImmutablePair<>(f, pattern.matcher(f.getFileName().toString()))).
@@ -146,7 +147,6 @@ public class Disk {
 
     /**
      * Delete file from disk
-     *
      * @param pathStr the path on disk
      * @return true if file was correctly deleted
      */

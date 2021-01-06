@@ -28,7 +28,7 @@ public class ClassInfo {
             fields.add(new FieldInfo(f));
         }
 
-        for (Method m : clazz.getDeclaredMethods()) {
+        for (Method m : Reflection.getMethods(clazz)) {
             Pair<Boolean, String> r = isMutator(m);
             if (r.getKey()) {
                 FieldInfo backingField = getField(r.getValue());

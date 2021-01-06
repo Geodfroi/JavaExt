@@ -1,5 +1,7 @@
 package ch.azure.aurore.javaxt.reflection;
 
+import org.junit.jupiter.api.Test;
+
 @SuppressWarnings("unused")
 class Employee{
     private String name;
@@ -38,15 +40,16 @@ class Employee{
 
 class ReflectionTest {
 
-//    @Test
-//    void getGetterMethods(){
-//        Method[] m = Reflection.getGetterMethods(Employee.class);
-//        assert m.length ==4;
-//    }
-//
-//    @Test
-//    void getSetterMethods(){
-//        Method[] m = Reflection.getSetterMethods(Employee.class);
-//        assert m.length ==3;
-//    }
+    @Test
+    void createInstance_fromClass()  {
+        Puddle puddle = Reflection.createInstance(Puddle.class, "Mr. Waffles");
+        assert puddle.getName().equals("Mr. Waffles");
+    }
+
+    @Test
+    void createInstance_fromString()  {
+        Puddle puddle = Reflection.createInstance("ch.azure.aurore.javax.reflection.Puddle", "Mr. Waffles");
+        assert puddle.getName().equals("Mr. Waffles");
+    }
+
 }

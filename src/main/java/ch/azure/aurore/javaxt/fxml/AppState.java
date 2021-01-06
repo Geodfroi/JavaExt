@@ -9,12 +9,14 @@ import java.nio.file.Path;
 public abstract class AppState {
 
     static final Path path = Path.of("local.json");
-    private static Class<?> stateClass;
 
     private double[] windowSize;
     private boolean initialised; //<- block calls to modified() when Jackson create the obj from string
 
     static AppState createInstance(Class<? extends AppState> clazz) {
+        if (clazz == null)
+            throw new IllegalArgumentException("AppState class parameter is null");
+
         String str = Disk.readFile(path);
         AppState item;
         if (Strings.isNullOrEmpty(str)) {
@@ -24,7 +26,7 @@ public abstract class AppState {
                 e.printStackTrace();
                 throw new IllegalStateException("Failed to instantiate [" + clazz.getSimpleName() + "] AppState");
             }
-        }else
+        } else
             item = JSON.readValue(clazz, str);
 
         if (item == null)
@@ -36,12 +38,14 @@ public abstract class AppState {
 
     public void setWindowSize(double x, double y) {
         windowSize = new double[]{x, y};
+        modified();
     }
 
     public double[] getWindowSize() {
         return windowSize;
     }
 
+    @SuppressWarnings("unused") //used for json serialisation
     public void setWindowSize(double[] windowSize) {
         this.windowSize = windowSize;
         modified();
@@ -51,9 +55,11 @@ public abstract class AppState {
         if (!initialised)
             return;
 
+        record();
+    }
+
+    public void record() {
         String str = JSON.toJSON(this);
         Disk.writeFile(path, str);
     }
-
-
 }

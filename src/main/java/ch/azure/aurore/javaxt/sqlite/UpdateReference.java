@@ -17,17 +17,27 @@ public class UpdateReference extends InsertData {
     @Override
     public void execute(PreparedStatement statement, Object data) throws SQLException {
         Object value = getFieldData().getFieldValue(data);
-        if (getFieldData().getRelationship() == Relationship.ONE_TO_ONE) {
-            int id = getFieldData().getRelationId(value);
-            String txt = getFieldData().getReferenceStr(id);
-            statement.setString(getIndex(), txt);
-        } else if (getFieldData().getRelationship() == Relationship.ONE_TO_MANY) {
-            List<DatabaseRef> list = getFieldData().getRelationIDs(value).getList();
-            if (list.size() == 0)
-                statement.setObject(getIndex(), null);
 
-            String txt = JSON.toJSON(list);
-            statement.setString(getIndex(), txt);
+        String txt;
+        switch (getFieldData().getRelationship()) {
+            case NONE:
+                break;
+            case ONE_TO_ONE:
+                int id = getFieldData().getRelationId(value);
+                txt = getFieldData().getReferenceStr(id);
+                statement.setString(getIndex(), txt);
+                break;
+            case ONE_TO_MANY_COLLECTION:
+                List<DatabaseRef> list = getFieldData().getRelationIDs(value).getList();
+                if (list.size() == 0)
+                    statement.setObject(getIndex(), null);
+                txt = JSON.toJSON(list);
+                statement.setString(getIndex(), txt);
+                break;
+            case ONE_TO_MANY_MAP:
+                break;
+            default:
+                throw new IllegalStateException("Unexpected value: " + getFieldData().getRelationship());
         }
     }
 
@@ -42,17 +52,27 @@ public class UpdateReference extends InsertData {
         List<Object> trace1 = new ArrayList<>(trace0);
         trace1.add(data);
 
-        if (getFieldData().getRelationship() == Relationship.ONE_TO_ONE) {
-            sqLite.updateItem(fieldValue, trace1);
+        switch (getFieldData().getRelationship()) {
 
-        } else if (getFieldData().getRelationship() == Relationship.ONE_TO_MANY) {
-            List<Object> i = Generics.getCollectionFromField(fieldValue); //.stream().filter(obj -> !trace.contains(obj)).collect(Collectors.toList());
-            if (i.size() == 0)
-                return;
-            for (Object obj : i) {
-                if (!sqLite.updateItem(obj, trace1))
+            case NONE:
+                break;
+            case ONE_TO_ONE:
+                sqLite.updateItem(fieldValue, trace1);
+                break;
+            case ONE_TO_MANY_COLLECTION:
+                List<Object> i = Generics.getCollectionFromField(fieldValue); //.stream().filter(obj -> !trace.contains(obj)).collect(Collectors.toList());
+                if (i.size() == 0)
                     return;
-            }
+                for (Object obj : i) {
+                    if (!sqLite.updateItem(obj, trace1))
+                        return;
+                }
+                break;
+            case ONE_TO_MANY_MAP:
+                throw new IllegalStateException("Unexpected value: " + getFieldData().getRelationship());
+
+            default:
+                throw new IllegalStateException("Unexpected value: " + getFieldData().getRelationship());
         }
     }
 

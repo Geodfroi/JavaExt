@@ -17,7 +17,7 @@ public class Settings {
     private static final String SETTINGS_FILE_NAME = "settings.json";
     private static final Settings instance = new Settings();
     private final String txt;
-    SimpleJSON JSONFile = new SimpleJSON();
+    private SimpleJSON JSONFile = new SimpleJSON();
 
     private Settings() {
         txt = FileResources.getResourceText(SETTINGS_FILE_NAME);

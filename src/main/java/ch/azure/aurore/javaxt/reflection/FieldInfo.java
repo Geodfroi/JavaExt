@@ -1,8 +1,5 @@
 package ch.azure.aurore.javaxt.reflection;
 
-import ch.azure.aurore.javaxt.generics.Generics;
-import ch.azure.aurore.javaxt.sqlite.wrapper.annotations.DatabaseIgnore;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.regex.Matcher;
@@ -11,14 +8,13 @@ import java.util.regex.Pattern;
 public class FieldInfo {
 
     private final Field f;
-    private final boolean ignored;
+    private final FieldType fieldType;
     private MethodInfo mutator;
     private MethodInfo accessor;
 
     public FieldInfo(Field f) {
         this.f = f;
-        ignored = f.isAnnotationPresent(DatabaseIgnore.class);
-
+        fieldType = FieldType.getFieldType(f);
     }
 
     //region Accessors
@@ -26,25 +22,21 @@ public class FieldInfo {
         return accessor;
     }
 
-    public MethodInfo getMutator() {
-        return mutator;
-    }
-
-    public boolean isIgnored() {
-        return ignored;
-    }
-    //endregion
-
     //region Mutators
     public void setAccessor(MethodInfo methodInfo) {
         this.accessor = methodInfo;
     }
 
-    public void setMutator(MethodInfo methodInfo) {
-        this.mutator = methodInfo;
+    public MethodInfo getMutator() {
+        return mutator;
     }
     //endregion
 
+    public void setMutator(MethodInfo methodInfo) {
+        this.mutator = methodInfo;
+    }
+
+    //endregion
 
     public <T extends Annotation> T getAnnotationIfPresent(Class<T> aClass) {
         if (isAnnotationPresent(aClass))
@@ -53,8 +45,8 @@ public class FieldInfo {
         return null;
     }
 
-    public Class<?> getComponentType() {
-        return Generics.getComponentType(f);
+    public FieldType getFieldType() {
+        return fieldType;
     }
 
     public Class<?> getDeclaringClass() {
@@ -63,10 +55,6 @@ public class FieldInfo {
 
     public String getName() {
         return f.getName();
-    }
-
-    public Class<?> getType() {
-        return f.getType();
     }
 
     public boolean hasAccessor() {
@@ -82,7 +70,7 @@ public class FieldInfo {
     }
 
     public boolean isNamed(String name) {
-        Pattern p = Pattern.compile("^_?" + name + "$", Pattern.CASE_INSENSITIVE );
+        Pattern p = Pattern.compile("^_?" + name + "$", Pattern.CASE_INSENSITIVE);
         Matcher m = p.matcher(f.getName());
         return m.matches();
     }
@@ -94,4 +82,7 @@ public class FieldInfo {
                 '}';
     }
 
+    public Class<?> getType() {
+        return f.getType();
+    }
 }

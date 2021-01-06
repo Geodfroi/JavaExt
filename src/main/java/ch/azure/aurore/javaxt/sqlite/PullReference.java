@@ -40,7 +40,7 @@ public class PullReference extends PullData {
                     fieldData.setValue(data, obj);
                 }
                 break;
-            case ONE_TO_MANY:
+            case ONE_TO_MANY_COLLECTION:
                 List<Object> collection = new ArrayList<>();
                 if (refs.size() > 0){
                     for (DatabaseRef entry : refs) {

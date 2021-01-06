@@ -1,7 +1,5 @@
 //package ch.azure.aurore.javaxt.reflection;
 //
-//import java.lang.annotation.Annotation;
-//
 //public class PropertyInfo {
 //    private final MethodInfo accessor;
 //    private final MethodInfo mutator;

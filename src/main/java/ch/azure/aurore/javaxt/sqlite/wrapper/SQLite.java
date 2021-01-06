@@ -2,6 +2,7 @@ package ch.azure.aurore.javaxt.sqlite.wrapper;
 
 import ch.azure.aurore.javaxt.sqlite.SQLiteImplementation;
 
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -17,6 +18,10 @@ public class SQLite {
 
     private SQLite(Connection conn) {
          implementation = new SQLiteImplementation(conn);
+    }
+
+    public static SQLite connect(Path p){
+        return connect(p.toAbsolutePath().toString());
     }
 
     public static SQLite connect(String databasePath) {
@@ -41,6 +46,10 @@ public class SQLite {
 
     public <T> T queryItem(Class<T> clazz, int id) {
         return implementation.queryItem(clazz, id);
+    }
+
+    public <T> T queryItem(Class<T> clazz) {
+        return implementation.queryItem(clazz);
     }
 
     public <T> List<T> queryItems(Class<T > clazz) {
