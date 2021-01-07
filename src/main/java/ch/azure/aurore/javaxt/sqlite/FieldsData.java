@@ -31,6 +31,9 @@ public class FieldsData {
 
     public FieldsData(Class<?> aClass) {
         this.className = FieldsData.getClassDBName(aClass);
+        if (className.equalsIgnoreCase("TABLE"))
+            throw new IllegalStateException("[TABLE] isn't an allowed class name");
+
         ClassInfo classInfo = Reflection.getInfo(aClass);
 
         if (!classInfo.hasAccessibleConstructor())

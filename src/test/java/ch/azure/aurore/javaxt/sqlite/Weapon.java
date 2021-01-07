@@ -7,13 +7,13 @@ import java.util.Map;
 
 public class Weapon extends SQLiteData {
 
-    private Map<String, Attack> attacks = new HashMap<>();
+    private Map<Integer, Attack> attacks = new HashMap<>();
 
-    public Map<String, Attack> getAttacks() {
+    public Map<Integer, Attack> getAttacks() {
         return attacks;
     }
 
-    public void setAttacks(Map<String, Attack> attacks) {
+    public void setAttacks(Map<Integer, Attack> attacks) {
         this.attacks = attacks;
     }
 }

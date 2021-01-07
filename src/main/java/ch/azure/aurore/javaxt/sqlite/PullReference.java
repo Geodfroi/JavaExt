@@ -8,7 +8,7 @@ import java.lang.reflect.Array;
 import java.util.*;
 
 public class PullReference extends PullData {
-    private Map<Object, DatabaseRef> refMap = new HashMap<>();
+    private Map<?, DatabaseRef> refMap = new HashMap<>();
     private DatabaseRef rf = null;
     private List<DatabaseRef> refList = new ArrayList<>();
 
@@ -26,7 +26,7 @@ public class PullReference extends PullData {
         this.refList = refs;
     }
 
-    public PullReference(FieldData fieldData, Map<Object, DatabaseRef> map) {
+    public PullReference(FieldData fieldData, Map<?, DatabaseRef> map) {
         super(fieldData);
         this.refMap = map;
     }

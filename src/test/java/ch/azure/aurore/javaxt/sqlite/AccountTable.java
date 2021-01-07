@@ -5,7 +5,7 @@ import ch.azure.aurore.javaxt.sqlite.wrapper.SQLiteData;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Table extends SQLiteData {
+public class AccountTable extends SQLiteData {
 
     private Map<Integer, Boolean> account = new HashMap<>();
 

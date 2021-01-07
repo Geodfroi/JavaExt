@@ -227,7 +227,7 @@ public class FieldData {
             case ONE_TO_MANY_MAP:
                 txt = resultSet.getString(n);
                 if (!Strings.isNullOrEmpty(txt)) {
-                    var map = JSON.readMap(Object.class, DatabaseRef.class, txt);
+                    Map<?, DatabaseRef> map = JSON.readMap(fieldInfo.getTypeParameters()[0], DatabaseRef.class, txt);
                     return new PullReference(this, map);
                 }
                 return new PullReference(this);
